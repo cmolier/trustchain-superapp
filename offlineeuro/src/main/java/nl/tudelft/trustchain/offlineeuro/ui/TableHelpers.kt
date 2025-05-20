@@ -134,7 +134,7 @@ object TableHelpers {
         val styledContext = ContextThemeWrapper(context, R.style.TableCell)
         val nameField =
             TextView(styledContext).apply {
-                layoutParams = layoutParams(0.5f)
+                layoutParams = layoutParams(0.2f)
                 text = address.name
             }
 
@@ -161,19 +161,22 @@ object TableHelpers {
 
             val mainActionButton = Button(context)
             val secondaryButton = Button(context)
+            val thirdButton = Button(context)
 
             applyButtonStyling(mainActionButton, context)
             applyButtonStyling(secondaryButton, context)
+            applyButtonStyling(thirdButton, context)
 
             buttonWrapper.addView(mainActionButton)
             buttonWrapper.addView(secondaryButton)
+            buttonWrapper.addView(thirdButton)
 
             when (address.type) {
                 Role.Bank -> {
                     setBankActionButtons(mainActionButton, secondaryButton, address.name, user, context)
                 }
                 Role.User -> {
-                    setUserActionButtons(mainActionButton, secondaryButton, address.name, user, context)
+                    setUserActionButtons(mainActionButton, secondaryButton, thirdButton, address.name, user, context)
                 }
 
                 else -> {}
@@ -217,11 +220,12 @@ object TableHelpers {
     fun setUserActionButtons(
         mainButton: Button,
         secondaryButton: Button,
+        thirdButton: Button,
         userName: String,
         user: User,
         context: Context
     ) {
-        mainButton.text = "Send Euro"
+        mainButton.text = "Euro"
         mainButton.setOnClickListener {
             try {
                 val result = user.sendDigitalEuroTo(userName)
@@ -230,10 +234,19 @@ object TableHelpers {
             }
         }
 
-        secondaryButton.text = "Double Spend"
+        secondaryButton.text = "Cheat"
         secondaryButton.setOnClickListener {
             try {
                 val result = user.doubleSpendDigitalEuroTo(userName)
+            } catch (e: Exception) {
+                Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        thirdButton.text = "EPH"
+        thirdButton.setOnClickListener {
+            try {
+                val result = user.sendDigitalEuroTo(userName)
             } catch (e: Exception) {
                 Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
             }
