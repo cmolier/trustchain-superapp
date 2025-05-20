@@ -2,6 +2,7 @@ package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import nl.tudelft.trustchain.offlineeuro.R
 import nl.tudelft.trustchain.offlineeuro.communication.IPV8CommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
@@ -32,6 +33,18 @@ class TTPHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_ttp_home) {
             ttp = TTP("TTP", group, iPV8CommunicationProtocol, context, onDataChangeCallback = onDataChangeCallback)
         }
         onDataChangeCallback(null)
+
+        view.findViewById<Button>(R.id.GenerateQRCodeButton).setOnClickListener {
+            val fragment = QRCodeFullScreenFragment.newInstance(
+                qrString = "otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example",
+                secret = "Secret: JBSWY3DPEHPK3PXP"
+            )
+            requireActivity().supportFragmentManager.beginTransaction()
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+                .add(android.R.id.content, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private val onDataChangeCallback: (String?) -> Unit = { message ->
