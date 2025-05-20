@@ -80,17 +80,17 @@ class Wallet(
         return Transaction.createTransaction(privateKey, publicKey, walletEntry, randomizationElements, bilinearGroup, crs)
     }
 
-    fun spendEuroEphemeral(): TransactionDetails? {
-        val walletEntry = walletManager.getNumberOfWalletEntriesToSpend(1).firstOrNull() ?: return null
-        val euro = walletEntry.digitalEuro
-        walletManager.incrementTimesSpent(euro)
-        return Transaction.createTransactionEphemeral(privateKey, publicKey, walletEntry)
-    }
-
-    fun doubleSpendEuroEphemeral(): TransactionDetails? {
-        val walletEntry = walletManager.getNumberOfWalletEntriesToDoubleSpend(1).firstOrNull() ?: return null
-        val euro = walletEntry.digitalEuro
-        walletManager.incrementTimesSpent(euro)
-        return Transaction.createTransactionEphemeral(privateKey, publicKey, walletEntry)
-    }
+//    fun spendEuroEphemeral(): TransactionDetails? {
+//        val walletEntry = walletManager.getNumberOfWalletEntriesToSpend(1).firstOrNull() ?: return null
+//        val euro = walletEntry.digitalEuro
+//        walletManager.incrementTimesSpent(euro)
+//        return Transaction.createTransactionEphemeral(privateKey, publicKey, walletEntry)
+//    }
+//
+//    fun doubleSpendEuroEphemeral(): TransactionDetails? {
+//        val walletEntry = walletManager.getNumberOfWalletEntriesToDoubleSpend(1).firstOrNull() ?: return null
+//        val euro = walletEntry.digitalEuro
+//        walletManager.incrementTimesSpent(euro)
+//        return Transaction.createTransactionEphemeral(privateKey, publicKey, walletEntry)
+//    }
 }

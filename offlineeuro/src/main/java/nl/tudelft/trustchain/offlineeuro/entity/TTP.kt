@@ -56,7 +56,9 @@ class TTP(
 
         return registeredUserManager.getRegisteredUserByPublicKey(publicKey)
     }
-
+    // used in the case of two divergent proofs
+    // to get the public key of the user
+    // that is trying to double spend
     fun getUserFromProofs(
         firstProof: GrothSahaiProof,
         secondProof: GrothSahaiProof
