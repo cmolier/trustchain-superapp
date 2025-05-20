@@ -62,6 +62,29 @@ data class TransactionDetails(
     }
 }
 
+data class TransactionDetailsEphemeral(
+    val digitalEuro: DigitalEuro,
+    val currentTransactionProof: TransactionProof,
+    val previousThetaSignature: SchnorrSignature?,
+    val theta1Signature: SchnorrSignature,
+    val spenderPublicKey: Element,
+    val linkage: SchnorrSignature
+) {
+    fun toTransactionDetailsBytes(): TransactionDetailsBytes {
+        return TransactionDetailsBytes(
+            digitalEuro.toDigitalEuroBytes(),
+            currentTransactionProof.toTransactionProofBytes(),
+            SchnorrSignatureSerializer.serializeSchnorrSignature(previousThetaSignature),
+            SchnorrSignatureSerializer.serializeSchnorrSignature(theta1Signature),
+            spenderPublicKey.toBytes()
+            SchnorrSignatureSerializer.serializeSchnorrSignature(linkage) // Add linkage to the bytes
+        )
+    }
+}
+
+
+
+
 object Transaction {
     fun createTransaction(
         privateKey: Element,
@@ -96,6 +119,8 @@ object Transaction {
         val previousThetaSignature = walletEntry.transactionSignature
         return TransactionDetails(digitalEuro, transactionProof, previousThetaSignature, theta1Signature, publicKey)
     }
+
+    fun createTransactionEphemeral() :
 
     fun validate(
         transaction: TransactionDetails,
