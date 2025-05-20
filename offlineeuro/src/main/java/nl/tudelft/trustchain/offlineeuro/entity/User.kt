@@ -54,6 +54,10 @@ class User(
         return result
     }
 
+    fun sendDigitalEuroEphemeral(nameReceiver: String): {
+
+    }
+
     fun withdrawDigitalEuro(bank: String): DigitalEuro {
         val serialNumber = UUID.randomUUID().toString()
         val firstT = group.getRandomZr()
