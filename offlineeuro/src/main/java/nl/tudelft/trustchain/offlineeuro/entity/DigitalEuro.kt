@@ -38,6 +38,7 @@ data class DigitalEuro(
     val firstTheta1: Element,
     val signature: SchnorrSignature,
     val proofs: ArrayList<GrothSahaiProof> = arrayListOf(),
+    val ephemeralKeySignatures: MutableList<SchnorrSignature> = mutableListOf()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -24,6 +24,7 @@ enum class TransactionResult(val valid: Boolean, val description: String) {
     INVALID_PROOF_IN_CHAIN(false, "Invalid proof in chain"),
     INVALID_CHAIN_OF_PROOFS(false, "Invalid chaining of proofs"),
     INVALID_PREVIOUS_TRANSACTION_SIGNATURE(false, "Invalid previous transaction signature"),
+    INVALID_EPHEMERAL_SIGNATURE(false, "Ephemeral key signature is not valid"),
 }
 
 data class TransactionDetailsBytes(
@@ -31,7 +32,8 @@ data class TransactionDetailsBytes(
     val currentTransactionProofBytes: TransactionProofBytes,
     val previousThetaSignatureBytes: ByteArray,
     val theta1SignatureBytes: ByteArray,
-    val spenderPublicKeyBytes: ByteArray,
+    val spenderEphemeralPublicKeyBytes: ByteArray,
+    val spenderLongTermPublicKeyBytes: ByteArray
 ) {
     fun toTransactionDetails(group: BilinearGroup): TransactionDetails {
         return TransactionDetails(
@@ -39,7 +41,8 @@ data class TransactionDetailsBytes(
             currentTransactionProofBytes.toTransactionProof(group),
             SchnorrSignatureSerializer.deserializeSchnorrSignatureBytes(previousThetaSignatureBytes),
             SchnorrSignatureSerializer.deserializeSchnorrSignatureBytes(theta1SignatureBytes)!!,
-            group.gElementFromBytes(spenderPublicKeyBytes)
+            group.gElementFromBytes(spenderEphemeralPublicKeyBytes),
+            group.gElementFromBytes(spenderLongTermPublicKeyBytes)
         )
     }
 }
@@ -49,7 +52,8 @@ data class TransactionDetails(
     val currentTransactionProof: TransactionProof,
     val previousThetaSignature: SchnorrSignature?,
     val theta1Signature: SchnorrSignature,
-    val spenderPublicKey: Element,
+    val spenderEphemeralPublicKey: Element,
+    val spenderLongTermPublicKey: Element
 ) {
     fun toTransactionDetailsBytes(): TransactionDetailsBytes {
         return TransactionDetailsBytes(
@@ -57,7 +61,8 @@ data class TransactionDetails(
             currentTransactionProof.toTransactionProofBytes(),
             SchnorrSignatureSerializer.serializeSchnorrSignature(previousThetaSignature),
             SchnorrSignatureSerializer.serializeSchnorrSignature(theta1Signature),
-            spenderPublicKey.toBytes()
+            spenderEphemeralPublicKey.toBytes(),
+            spenderLongTermPublicKey.toBytes()
         )
     }
 }
@@ -69,7 +74,8 @@ object Transaction {
         walletEntry: WalletEntry,
         randomizationElements: RandomizationElements,
         bilinearGroup: BilinearGroup,
-        crs: CRS
+        crs: CRS,
+        longTermPublicKey: Element
     ): TransactionDetails {
         val digitalEuro = walletEntry.digitalEuro
 
@@ -94,7 +100,7 @@ object Transaction {
         val transactionProofSize = GrothSahaiSerializer.serializeGrothSahaiProof(transactionProof.grothSahaiProof).size
         val theta1Signature = Schnorr.schnorrSignature(r, randomizationElements.group1TInv.toBytes(), bilinearGroup)
         val previousThetaSignature = walletEntry.transactionSignature
-        return TransactionDetails(digitalEuro, transactionProof, previousThetaSignature, theta1Signature, publicKey)
+        return TransactionDetails(digitalEuro, transactionProof, previousThetaSignature, theta1Signature, publicKey, longTermPublicKey)
     }
 
     fun validate(
@@ -133,9 +139,18 @@ object Transaction {
             return TransactionResult.INVALID_YS_GIVEN
         }
 
+        // Validate Schnorr signature on the ephemeral public key
+        val ephemeralSignature = transaction.digitalEuro.ephemeralKeySignatures.last()
+        val longTermPublicKey = transaction.spenderLongTermPublicKey
+        val spenderEphemeralPublicKey = transaction.spenderEphemeralPublicKey
+
+        if (!Schnorr.verifySchnorrSignature(ephemeralSignature, longTermPublicKey, bilinearGroup) ||
+            !spenderEphemeralPublicKey.toBytes().contentEquals(ephemeralSignature.signedMessage) ) {
+            return TransactionResult.INVALID_EPHEMERAL_SIGNATURE
+        }
+
         // Validate if the public key is used correctly
-        val spenderPublicKey = transaction.spenderPublicKey
-        val expectedTarget = bilinearGroup.pair(spenderPublicKey, usedY)
+        val expectedTarget = bilinearGroup.pair(spenderEphemeralPublicKey, usedY)
 
         if (expectedTarget != transactionProof.grothSahaiProof.target) {
             return TransactionResult.INVALID_CURRENT_TARGET
