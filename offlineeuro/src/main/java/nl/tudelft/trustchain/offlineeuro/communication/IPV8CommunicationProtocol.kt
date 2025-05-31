@@ -23,6 +23,7 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMess
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElements
+import nl.tudelft.trustchain.offlineeuro.cryptography.SchnorrSignature
 import nl.tudelft.trustchain.offlineeuro.db.AddressBookManager
 import nl.tudelft.trustchain.offlineeuro.entity.Address
 import nl.tudelft.trustchain.offlineeuro.entity.Bank
@@ -32,6 +33,7 @@ import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetails
 import nl.tudelft.trustchain.offlineeuro.entity.User
 import nl.tudelft.trustchain.offlineeuro.enums.Role
 import nl.tudelft.trustchain.offlineeuro.libraries.GrothSahaiSerializer
+import nl.tudelft.trustchain.offlineeuro.libraries.SchnorrSignatureSerializer
 import java.math.BigInteger
 
 class IPV8CommunicationProtocol(
@@ -120,12 +122,16 @@ class IPV8CommunicationProtocol(
     override fun requestFraudControl(
         firstProof: GrothSahaiProof,
         secondProof: GrothSahaiProof,
+        euroSchnorrSignature: SchnorrSignature,
+        doubleSpentEuroSchnorrSignature: SchnorrSignature,
         nameTTP: String
     ): String {
         val ttpAddress = addressBookManager.getAddressByName(nameTTP)
         community.sendFraudControlRequest(
             GrothSahaiSerializer.serializeGrothSahaiProof(firstProof),
             GrothSahaiSerializer.serializeGrothSahaiProof(secondProof),
+            euroSchnorrSignature.toBytes(),
+            doubleSpentEuroSchnorrSignature.toBytes(),
             ttpAddress.peerPublicKey!!
         )
         val message = waitForMessage(CommunityMessageType.FraudControlReplyMessage) as FraudControlReplyMessage
@@ -258,7 +264,9 @@ class IPV8CommunicationProtocol(
         val ttp = participant as TTP
         val firstProof = GrothSahaiSerializer.deserializeProofBytes(message.firstProofBytes, participant.group)
         val secondProof = GrothSahaiSerializer.deserializeProofBytes(message.secondProofBytes, participant.group)
-        val result = ttp.getUserFromProofs(firstProof, secondProof)
+        val euroSchnorrSignature = SchnorrSignatureSerializer.deserializeSchnorrSignatureBytes(message.euroSchnorrSignature)
+        val doubleSpentEuroSchnorrSignature = SchnorrSignatureSerializer.deserializeSchnorrSignatureBytes(message.doubleSpentEuroSchnorrSignature)
+        val result = ttp.getUserFromProofs(firstProof, secondProof, euroSchnorrSignature, doubleSpentEuroSchnorrSignature)
         community.sendFraudControlReply(result, message.requestingPeer)
     }
 

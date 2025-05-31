@@ -6,6 +6,8 @@ import nl.tudelft.trustchain.offlineeuro.communication.ICommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.CRSGenerator
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
+import nl.tudelft.trustchain.offlineeuro.cryptography.Schnorr
+import nl.tudelft.trustchain.offlineeuro.cryptography.SchnorrSignature
 import nl.tudelft.trustchain.offlineeuro.db.RegisteredUserManager
 
 class TTP(
@@ -48,21 +50,51 @@ class TTP(
         TODO("Not yet implemented")
     }
 
-    fun getUserFromProof(grothSahaiProof: GrothSahaiProof): RegisteredUser? {
+    fun getUserFromProof(grothSahaiProof: GrothSahaiProof, schnorrSignature: SchnorrSignature): RegisteredUser? {
         val crsExponent = crsMap[crs.u]
         val test = group.g.powZn(crsExponent)
-        val publicKey =
+        val ephemeralPublicKey =
             grothSahaiProof.c1.powZn(crsExponent!!.mul(-1)).mul(grothSahaiProof.c2).immutable
-
+        val publicKey = getPublicKeyFromEphemeralPublicKey(ephemeralPublicKey, schnorrSignature, group)
+        if (publicKey == null) {
+            onDataChangeCallback?.invoke("Invalid proof received!")
+            return null
+        }
         return registeredUserManager.getRegisteredUserByPublicKey(publicKey)
+    }
+    // Get public key from ephemeral public key using the Schnorr signature
+    fun getPublicKeyFromEphemeralPublicKey(
+        ephemeralPublicKey: Element,
+        schnorrSignature: SchnorrSignature,
+        bilinearGroup: BilinearGroup
+    ): Element? {
+        // First verify the signature message matches the ephemeral public key
+        if (!ephemeralPublicKey.toBytes().contentEquals(schnorrSignature.signedMessage)) {
+            return null
+        }
+
+        try {
+            // Simple approach: check all registered users to find whose public key
+            // correctly verifies this signature
+            for (user in getRegisteredUsers()) {
+                if (Schnorr.verifySchnorrSignature(schnorrSignature, user.publicKey, bilinearGroup)) {
+                    return user.publicKey
+                }
+            }
+            return null
+        } catch (e: Exception) {
+            return null
+        }
     }
 
     fun getUserFromProofs(
         firstProof: GrothSahaiProof,
-        secondProof: GrothSahaiProof
+        secondProof: GrothSahaiProof,
+        euroSchnorrSignature: SchnorrSignature,
+        doubleSpendSchnorrSignature: SchnorrSignature
     ): String {
-        val firstPK = getUserFromProof(firstProof)
-        val secondPK = getUserFromProof(secondProof)
+        val firstPK = getUserFromProof(firstProof, euroSchnorrSignature)
+        val secondPK = getUserFromProof(secondProof, doubleSpendSchnorrSignature)
 
         return if (firstPK != null && firstPK == secondPK) {
             onDataChangeCallback?.invoke("Found proof that  ${firstPK.name} committed fraud!")

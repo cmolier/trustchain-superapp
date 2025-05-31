@@ -36,7 +36,7 @@ data class DigitalEuroBytes(
 data class DigitalEuro(
     val serialNumber: String,
     val firstTheta1: Element,
-    val signature: SchnorrSignature,
+    val signature: SchnorrSignature, // Signature used
     val proofs: ArrayList<GrothSahaiProof> = arrayListOf(),
     val ephemeralKeySignatures: MutableList<SchnorrSignature> = mutableListOf()
 ) {

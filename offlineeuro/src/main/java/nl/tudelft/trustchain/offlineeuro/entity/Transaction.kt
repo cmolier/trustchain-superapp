@@ -80,10 +80,13 @@ object Transaction {
         val digitalEuro = walletEntry.digitalEuro
 
         val target =
-            if (digitalEuro.proofs.isEmpty()) {
+            if (digitalEuro.proofs.isEmpty()) { // if first transaction
                 bilinearGroup.pairing.zr.newElementFromBytes(digitalEuro.signature.toBytes())
             } else {
                 val targetBytes = digitalEuro.proofs.last().target.toBytes()
+                // take the last target from the proofs
+                // and convert it to an Element
+
                 bilinearGroup.pairing.zr.newElementFromBytes(targetBytes)
             }
         val (transactionProof, r) =
@@ -105,7 +108,7 @@ object Transaction {
 
     fun validate(
         transaction: TransactionDetails,
-        publicKeyBank: Element,
+        publicKeyBank: Element, // not always the bank, but the public key of the entity that signed the transaction
         bilinearGroup: BilinearGroup,
         crs: CRS
     ): TransactionResult {
