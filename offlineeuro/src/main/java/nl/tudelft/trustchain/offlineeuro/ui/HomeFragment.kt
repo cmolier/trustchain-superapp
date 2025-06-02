@@ -30,6 +30,7 @@ class HomeFragment : OfflineEuroBaseFragment(R.layout.fragment_home) {
 
         view.findViewById<Button>(R.id.JoinAsUserButton).setOnClickListener {
             showAlertDialog()
+
         }
         view.findViewById<Button>(R.id.JoinAsAllRolesButton).setOnClickListener {
             findNavController().navigate(R.id.nav_home_all_roles_home)
@@ -88,6 +89,6 @@ class HomeFragment : OfflineEuroBaseFragment(R.layout.fragment_home) {
 
     private fun moveToUserHome(userName: String) {
         val bundle = bundleOf("userName" to userName)
-        findNavController().navigate(R.id.nav_home_userhome, bundle)
+        findNavController().navigate(R.id.nav_home_qrscan, bundle)
     }
 }
