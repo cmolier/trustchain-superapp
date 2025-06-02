@@ -265,7 +265,9 @@ class IPV8CommunicationProtocol(
         val firstProof = GrothSahaiSerializer.deserializeProofBytes(message.firstProofBytes, participant.group)
         val secondProof = GrothSahaiSerializer.deserializeProofBytes(message.secondProofBytes, participant.group)
         val euroSchnorrSignature = SchnorrSignatureSerializer.deserializeSchnorrSignatureBytes(message.euroSchnorrSignature)
+            ?: throw IllegalStateException("Failed to deserialize euroSchnorrSignature")
         val doubleSpentEuroSchnorrSignature = SchnorrSignatureSerializer.deserializeSchnorrSignatureBytes(message.doubleSpentEuroSchnorrSignature)
+            ?: throw IllegalStateException("Failed to deserialize doubleSpentEuroSchnorrSignature")
         val result = ttp.getUserFromProofs(firstProof, secondProof, euroSchnorrSignature, doubleSpentEuroSchnorrSignature)
         community.sendFraudControlReply(result, message.requestingPeer)
     }

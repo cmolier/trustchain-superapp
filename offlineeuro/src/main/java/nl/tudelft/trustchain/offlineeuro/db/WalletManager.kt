@@ -23,7 +23,8 @@ class WalletManager(
             previousProofs: ByteArray?,
             secretT: ByteArray,
             transactionSignature: ByteArray?,
-            timesSpent: Long
+            timesSpent: Long,
+            ephermalPrivateKey: ByteArray?
         ->
         WalletEntry(
             DigitalEuro(
@@ -34,7 +35,8 @@ class WalletManager(
             ),
             group.zrElementFromBytes(secretT),
             deserializeSchnorr(transactionSignature),
-            timesSpent
+            timesSpent,
+            group.gElementFromBytes(ephermalPrivateKey!!)
         )
     }
 

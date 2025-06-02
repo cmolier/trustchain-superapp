@@ -490,7 +490,9 @@ class OfflineEuroCommunity(
     ) {
         val message = FraudControlRequestMessage(
             payload.firstProofBytes,
-            payload.secondProofBytes,,,
+            payload.secondProofBytes,
+            payload.euroSchnorrSignature,
+            payload.doubleSpentEuroSchnorrSignature,
             peer
         )
         addMessage(message)
