@@ -63,7 +63,8 @@ class WalletManager(
             serialize(digitalEuro.signature)!!,
             serialize(digitalEuro.proofs),
             walletEntry.t.toBytes(),
-            serialize(walletEntry.transactionSignature)
+            serialize(walletEntry.transactionSignature),
+            walletEntry.ephemeralPrivateKey.toBytes()
         )
         return true
     }
