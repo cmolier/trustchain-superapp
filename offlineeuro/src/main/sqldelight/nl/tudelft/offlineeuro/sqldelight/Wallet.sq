@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS Wallet (
     firstTheta1 BLOB NOT NULL,
     signature BLOB NOT NULL,
     previousProofs BLOB,
+    shnnorProofs BLOB NOT NULL,
     secretT BLOB NOT NULL,
     transactionSignature BLOB,
     timesSpent INTEGER NOT NULL,
@@ -18,12 +19,14 @@ INSERT INTO Wallet(
     firstTheta1,
     signature,
     previousProofs,
+    shnnorProofs,
     secretT,
     transactionSignature,
     timesSpent,
     ephermalPrivateKey
 )
 VALUES (
+    ?,
     ?,
     ?,
     ?,

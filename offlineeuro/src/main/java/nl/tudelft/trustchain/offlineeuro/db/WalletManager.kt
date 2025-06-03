@@ -64,6 +64,7 @@ class WalletManager(
             digitalEuro.firstTheta1.toBytes(),
             serialize(digitalEuro.signature)!!,
             serialize(digitalEuro.proofs),
+            serialize(digitalEuro.ephemeralKeySignatures)!!,
             walletEntry.t.toBytes(),
             serialize(walletEntry.transactionSignature),
             walletEntry.ephemeralPrivateKey.toBytes()

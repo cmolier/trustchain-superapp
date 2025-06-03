@@ -19,12 +19,14 @@ class DepositedEuroManager(
             firstTheta: ByteArray,
             signature: ByteArray,
             previousProofs: ByteArray?,
+            ephemeralSignatures: ByteArray
         ->
         DigitalEuro(
             serialNumber,
             group.gElementFromBytes(firstTheta),
             deserializeSchnorr(signature)!!,
-            deserializeGSP(previousProofs)
+            deserializeGSP(previousProofs),
+            deserializeSchnorrList(ephemeralSignatures)
         )
     }
 
@@ -39,7 +41,8 @@ class DepositedEuroManager(
             serialNumber,
             firstTheta1.toBytes(),
             serialize(signature)!!,
-            serialize(proofs)
+            serialize(proofs),
+            serialize(digitalEuro.ephemeralKeySignatures)!!
         )
     }
 
