@@ -8,6 +8,7 @@ import nl.tudelft.offlineeuro.sqldelight.Database
 import nl.tudelft.offlineeuro.sqldelight.RegisteredUsersQueries
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.entity.RegisteredUser
+import java.security.SecureRandom
 
 /**
  * An overlay for the *RegisteredUsers* table.
@@ -55,9 +56,20 @@ class RegisteredUserManager(
         userName: String,
         publicKey: Element
     ): Boolean {
+        // generate google key which will be used to create
+        // a qr code for the user to scan
+
+        if (getRegisteredUserByName(userName) != null || getRegisteredUserByPublicKey(publicKey) != null) {
+            return false // User already exists
+        }
+
+        // generate a google auth key
+        val googleAuthKey = generateGoogleAuthKey()
+
         queries.addUser(
             userName,
             publicKey.toBytes(),
+            googleAuthKey,
         )
         return true
     }
@@ -93,5 +105,37 @@ class RegisteredUserManager(
      */
     fun clearAllRegisteredUsers() {
         queries.clearAllRegisteredUsers()
+    }
+
+    fun generateGoogleAuthKey(): String {
+        val buffer = ByteArray(20) // 160 bits is recommended for TOTP
+        SecureRandom().nextBytes(buffer)
+        return base32Encode(buffer)
+    }
+
+    fun base32Encode(data: ByteArray): String {
+        val BASE32_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+
+        val builder = StringBuilder()
+        var bits = 0
+        var bitsCount = 0
+
+        for (b in data) {
+            bits = (bits shl 8) or (b.toInt() and 0xff)
+            bitsCount += 8
+
+            while (bitsCount >= 5) {
+                bitsCount -= 5
+                val index = (bits shr bitsCount) and 0x1f
+                builder.append(BASE32_CHARS[index])
+            }
+        }
+
+        if (bitsCount > 0) {
+            val index = (bits shl (5 - bitsCount)) and 0x1f
+            builder.append(BASE32_CHARS[index])
+        }
+
+        return builder.toString()
     }
 }
