@@ -21,6 +21,7 @@ class WalletManager(
             firstTheta: ByteArray,
             signature: ByteArray,
             previousProofs: ByteArray?,
+            ephemeralSignatures: ByteArray,
             secretT: ByteArray,
             transactionSignature: ByteArray?,
             timesSpent: Long,
@@ -31,7 +32,8 @@ class WalletManager(
                 serialNumber,
                 group.gElementFromBytes(firstTheta),
                 deserializeSchnorr(signature)!!,
-                deserializeGSP(previousProofs)
+                deserializeGSP(previousProofs),
+                deserializeSchnorrList(ephemeralSignatures)
             ),
             group.zrElementFromBytes(secretT),
             deserializeSchnorr(transactionSignature),

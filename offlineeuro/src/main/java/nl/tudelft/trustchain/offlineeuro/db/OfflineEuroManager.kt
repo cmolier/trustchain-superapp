@@ -31,4 +31,8 @@ open class OfflineEuroManager(
     protected fun deserializeSchnorr(byteArray: ByteArray?): SchnorrSignature? {
         return sSS.deserializeSchnorrSignatureBytes(byteArray)
     }
+
+    protected fun deserializeSchnorrList(byteArray: ByteArray): ArrayList<SchnorrSignature> {
+        return sSS.deserializeSignatureListBytes(byteArray)
+    }
 }

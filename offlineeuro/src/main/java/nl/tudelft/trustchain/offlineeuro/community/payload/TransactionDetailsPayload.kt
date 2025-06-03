@@ -22,6 +22,7 @@ class TransactionDetailsPayload(
         payload += serializeVarLen(digitalEuroBytes.firstTheta1Bytes)
         payload += serializeVarLen(digitalEuroBytes.signatureBytes)
         payload += serializeVarLen(digitalEuroBytes.proofsBytes)
+        payload += serializeVarLen((digitalEuroBytes.ephemeralKeySignaturesBytes))
 
         // Add the current transaction parts
         val currentTransactionBytes = transactionDetailsBytes.currentTransactionProofBytes
@@ -61,6 +62,9 @@ class TransactionDetailsPayload(
             val (proofBytes, proofBytesSize) = deserializeVarLen(buffer, localOffset)
             localOffset += proofBytesSize
 
+            val (ephemeralKeySignaturesBytes, ephemeralKeySignatureBytesSize) = deserializeVarLen(buffer, localOffset)
+            localOffset += ephemeralKeySignatureBytesSize
+
             // Current Transaction Parts
             val (grothSahaiProofBytes, grothSahaiProofSize) = deserializeVarLen(buffer, localOffset)
             localOffset += grothSahaiProofSize
@@ -87,11 +91,11 @@ class TransactionDetailsPayload(
                     localOffset
                 )
             localOffset += spenderEphemeralPublicKeySize
-            val (spenderPublicKeyBytes, spenderLongTermPublicKeySize) = deserializeVarLen(buffer, localOffset)
+            val (spenderLongTermPublicKeyBytes, spenderLongTermPublicKeySize) = deserializeVarLen(buffer, localOffset)
             localOffset += spenderLongTermPublicKeySize
 
             val digitalEuroBytes =
-                DigitalEuroBytes(serialNumberBytes, firstTheta1Bytes, signatureBytes, proofBytes)
+                DigitalEuroBytes(serialNumberBytes, firstTheta1Bytes, signatureBytes, proofBytes, ephemeralKeySignaturesBytes)
             val transactionProofBytes =
                 TransactionProofBytes(grothSahaiProofBytes, usedYBytes, usedVSBytes)
 
@@ -102,7 +106,7 @@ class TransactionDetailsPayload(
                     previousThetaSignatureBytes,
                     theta1SignatureBytes,
                     spenderEphemeralPublicKeyBytes,
-                    spenderPublicKeyBytes
+                    spenderLongTermPublicKeyBytes
                 )
 
             return Pair(

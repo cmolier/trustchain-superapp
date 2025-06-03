@@ -43,7 +43,7 @@ object SchnorrSignatureSerializer {
         return bytesToSchnorrSignature(signatureBytes)
     }
 
-    fun deserializeSignatureListBytes(bytes: ByteArray): MutableList<SchnorrSignature> {
+    fun deserializeSignatureListBytes(bytes: ByteArray): ArrayList<SchnorrSignature> {
         val signatureBytesList = deserializeSignatureBytesList(bytes)
         return ArrayList(signatureBytesList.map { x -> bytesToSchnorrSignature(x) })
     }
