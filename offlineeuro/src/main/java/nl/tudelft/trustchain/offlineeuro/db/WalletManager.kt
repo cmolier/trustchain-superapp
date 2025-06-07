@@ -38,7 +38,7 @@ class WalletManager(
             group.zrElementFromBytes(secretT),
             deserializeSchnorr(transactionSignature),
             timesSpent,
-            group.gElementFromBytes(ephermalPrivateKey!!)
+            group.zrElementFromBytes(ephermalPrivateKey!!)
         )
     }
 
