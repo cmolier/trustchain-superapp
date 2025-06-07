@@ -19,7 +19,7 @@ object GrothSahai {
         val pairing = bilinearGroup.pairing
 
         val signatureElement = target.immutable
-        val y = signatureElement.div(privateKey).immutable // it breaks here
+        val y = signatureElement.div(privateKey).immutable
         val computedY = h.powZn(y).immutable
         val newTarget = pairing.pairing(publicKey, computedY).immutable
 
