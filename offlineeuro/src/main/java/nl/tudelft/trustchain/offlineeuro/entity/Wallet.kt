@@ -11,7 +11,8 @@ data class WalletEntry(
     val digitalEuro: DigitalEuro,
     val t: Element,
     val transactionSignature: SchnorrSignature?,
-    val timesSpent: Long = 0
+    val timesSpent: Long = 0,
+    val ephemeralPrivateKey: Element
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -32,21 +33,23 @@ class Wallet(
 ) {
     fun addToWallet(
         transactionDetails: TransactionDetails,
-        t: Element
+        t: Element,
+        ephemeralPrivateKey: Element
     ) {
         val digitalEuro = transactionDetails.digitalEuro
         digitalEuro.proofs.add(transactionDetails.currentTransactionProof.grothSahaiProof)
 
         val transactionSignature = transactionDetails.theta1Signature
-        val walletEntry = WalletEntry(digitalEuro, t, transactionSignature)
+        val walletEntry = WalletEntry(digitalEuro, t, transactionSignature, ephemeralPrivateKey = ephemeralPrivateKey)
         walletManager.insertWalletEntry(walletEntry)
     }
 
     fun addToWallet(
         digitalEuro: DigitalEuro,
-        t: Element
+        t: Element,
+        ephemeralPrivateKey: Element
     ) {
-        walletManager.insertWalletEntry(WalletEntry(digitalEuro, t, null))
+        walletManager.insertWalletEntry(WalletEntry(digitalEuro, t, null, ephemeralPrivateKey = ephemeralPrivateKey))
     }
 
     fun getWalletEntryToSpend(): WalletEntry? {
@@ -65,7 +68,8 @@ class Wallet(
         val walletEntry = walletManager.getNumberOfWalletEntriesToSpend(1).firstOrNull() ?: return null
         val euro = walletEntry.digitalEuro
         walletManager.incrementTimesSpent(euro)
-        return Transaction.createTransaction(privateKey, publicKey, walletEntry, randomizationElements, bilinearGroup, crs)
+
+        return Transaction.createTransaction(walletEntry.ephemeralPrivateKey, bilinearGroup.gElementFromBytes(euro.ephemeralKeySignatures.last().signedMessage), walletEntry, randomizationElements, bilinearGroup, crs, publicKey)
     }
 
     fun doubleSpendEuro(
@@ -77,6 +81,6 @@ class Wallet(
         val euro = walletEntry.digitalEuro
         walletManager.incrementTimesSpent(euro)
 
-        return Transaction.createTransaction(privateKey, publicKey, walletEntry, randomizationElements, bilinearGroup, crs)
+        return Transaction.createTransaction(walletEntry.ephemeralPrivateKey, bilinearGroup.gElementFromBytes(euro.ephemeralKeySignatures.last().signedMessage), walletEntry, randomizationElements, bilinearGroup, crs, publicKey)
     }
 }

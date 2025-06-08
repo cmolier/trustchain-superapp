@@ -21,20 +21,24 @@ class WalletManager(
             firstTheta: ByteArray,
             signature: ByteArray,
             previousProofs: ByteArray?,
+            ephemeralSignatures: ByteArray,
             secretT: ByteArray,
             transactionSignature: ByteArray?,
-            timesSpent: Long
+            timesSpent: Long,
+            ephermalPrivateKey: ByteArray?
         ->
         WalletEntry(
             DigitalEuro(
                 serialNumber,
                 group.gElementFromBytes(firstTheta),
                 deserializeSchnorr(signature)!!,
-                deserializeGSP(previousProofs)
+                deserializeGSP(previousProofs),
+                deserializeSchnorrList(ephemeralSignatures)
             ),
             group.zrElementFromBytes(secretT),
             deserializeSchnorr(transactionSignature),
-            timesSpent
+            timesSpent,
+            group.zrElementFromBytes(ephermalPrivateKey!!)
         )
     }
 
@@ -60,8 +64,10 @@ class WalletManager(
             digitalEuro.firstTheta1.toBytes(),
             serialize(digitalEuro.signature)!!,
             serialize(digitalEuro.proofs),
+            serialize(digitalEuro.ephemeralKeySignatures)!!,
             walletEntry.t.toBytes(),
-            serialize(walletEntry.transactionSignature)
+            serialize(walletEntry.transactionSignature),
+            walletEntry.ephemeralPrivateKey.toBytes()
         )
         return true
     }

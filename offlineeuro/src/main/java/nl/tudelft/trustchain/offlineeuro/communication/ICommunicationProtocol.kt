@@ -4,6 +4,8 @@ import it.unisa.dia.gas.jpbc.Element
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElements
+import nl.tudelft.trustchain.offlineeuro.cryptography.SchnorrSignature
+import nl.tudelft.trustchain.offlineeuro.entity.DigitalEuro
 import nl.tudelft.trustchain.offlineeuro.entity.Participant
 import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetails
 import java.math.BigInteger
@@ -44,6 +46,8 @@ interface ICommunicationProtocol {
     fun requestFraudControl(
         firstProof: GrothSahaiProof,
         secondProof: GrothSahaiProof,
+        euroSchnorrSignature: SchnorrSignature,
+        doubleSpentEuroSchnorrSignature: SchnorrSignature,
         nameTTP: String
     ): String
 

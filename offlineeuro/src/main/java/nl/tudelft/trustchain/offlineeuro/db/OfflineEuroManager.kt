@@ -16,10 +16,15 @@ open class OfflineEuroManager(
     private val sSS = SchnorrSignatureSerializer
     protected val database: Database = Database(driver)
 
+    @JvmName("serializeListOfGrothSahaiProofs")
     protected fun serialize(grothSahaiProofs: List<GrothSahaiProof>): ByteArray? {
         return gSS.serializeGrothSahaiProofs(grothSahaiProofs)
     }
 
+    @JvmName("serializeListOfSchnorrSignatures")
+    protected fun serialize(schnorrSignatures: List<SchnorrSignature>): ByteArray? {
+        return sSS.serializeSchnorrSignatures(schnorrSignatures)
+    }
     protected fun serialize(schnorrSignature: SchnorrSignature?): ByteArray? {
         return sSS.serializeSchnorrSignature(schnorrSignature)
     }
@@ -30,5 +35,9 @@ open class OfflineEuroManager(
 
     protected fun deserializeSchnorr(byteArray: ByteArray?): SchnorrSignature? {
         return sSS.deserializeSchnorrSignatureBytes(byteArray)
+    }
+
+    protected fun deserializeSchnorrList(byteArray: ByteArray): ArrayList<SchnorrSignature> {
+        return sSS.deserializeSignatureListBytes(byteArray)
     }
 }

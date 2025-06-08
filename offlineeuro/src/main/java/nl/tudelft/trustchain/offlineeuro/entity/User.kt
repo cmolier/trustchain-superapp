@@ -60,6 +60,15 @@ class User(
         val tInv = firstT.mul(-1)
         val initialTheta = group.g.powZn(tInv).immutable
 
+        val ephemeralPrivateKey = group.getRandomZr()
+        val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+        val ephemeralKeySignature = Schnorr.schnorrSignature(
+            privateKey,
+            ephemeralPublicKey.toBytes(),
+            group
+        )
+
         val bytesToSign = serialNumber.toByteArray() + initialTheta.toBytes()
 
         val bankRandomness = communicationProtocol.getBlindSignatureRandomness(publicKey, bank, group)
@@ -68,8 +77,9 @@ class User(
         val blindedChallenge = Schnorr.createBlindedChallenge(bankRandomness, bytesToSign, bankPublicKey, group)
         val blindSignature = communicationProtocol.requestBlindSignature(publicKey, bank, blindedChallenge.blindedChallenge)
         val signature = Schnorr.unblindSignature(blindedChallenge, blindSignature)
-        val digitalEuro = DigitalEuro(serialNumber, initialTheta, signature, arrayListOf())
-        wallet.addToWallet(digitalEuro, firstT)
+        val digitalEuro = DigitalEuro(serialNumber, initialTheta, signature, arrayListOf(), mutableListOf(ephemeralKeySignature))
+
+        wallet.addToWallet(digitalEuro, firstT, ephemeralPrivateKey)
         onDataChangeCallback?.invoke("Withdrawn ${digitalEuro.serialNumber} successfully!")
         return digitalEuro
     }
@@ -88,7 +98,18 @@ class User(
         val transactionResult = Transaction.validate(transactionDetails, publicKeyBank, group, crs)
 
         if (transactionResult.valid) {
-            wallet.addToWallet(transactionDetails, usedRandomness)
+            val ephemeralPrivateKey = group.getRandomZr()
+            val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+            val ephemeralKeySignature = Schnorr.schnorrSignature(
+                privateKey,
+                ephemeralPublicKey.toBytes(),
+                group
+            )
+
+            transactionDetails.digitalEuro.ephemeralKeySignatures.add(ephemeralKeySignature)
+
+            wallet.addToWallet(transactionDetails, usedRandomness, ephemeralPrivateKey)
             onDataChangeCallback?.invoke("Received an euro from $publicKeySender")
             return transactionResult.description
         }

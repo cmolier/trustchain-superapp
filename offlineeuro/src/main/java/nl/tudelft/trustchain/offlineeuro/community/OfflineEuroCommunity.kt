@@ -457,6 +457,8 @@ class OfflineEuroCommunity(
     fun sendFraudControlRequest(
         firstProofBytes: ByteArray,
         secondProofBytes: ByteArray,
+        euroSchnorrSignature: ByteArray,
+        doubleSpentEuroSchnorrSignature: ByteArray,
         ttpPublicKeyBytes: ByteArray
     ) {
         val peer = getPeerByPublicKeyBytes(ttpPublicKeyBytes)
@@ -468,7 +470,9 @@ class OfflineEuroCommunity(
                 MessageID.FRAUD_CONTROL_REQUEST,
                 FraudControlRequestPayload(
                     firstProofBytes,
-                    secondProofBytes
+                    secondProofBytes,
+                    euroSchnorrSignature,
+                    doubleSpentEuroSchnorrSignature
                 )
             )
 
@@ -484,7 +488,13 @@ class OfflineEuroCommunity(
         peer: Peer,
         payload: FraudControlRequestPayload
     ) {
-        val message = FraudControlRequestMessage(payload.firstProofBytes, payload.secondProofBytes, peer)
+        val message = FraudControlRequestMessage(
+            payload.firstProofBytes,
+            payload.secondProofBytes,
+            payload.euroSchnorrSignature,
+            payload.doubleSpentEuroSchnorrSignature,
+            peer
+        )
         addMessage(message)
     }
 

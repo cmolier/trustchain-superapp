@@ -26,6 +26,11 @@ private data class SchnorrSignatureBytes(
 }
 
 object SchnorrSignatureSerializer {
+    fun serializeSchnorrSignatures(signatures: List<SchnorrSignature>): ByteArray {
+        val signaturesBytes = signatures.map { x -> schnorrSignatureToBytes(x) }
+        return serializeSchnorrBytesList(signaturesBytes)
+    }
+
     fun serializeSchnorrSignature(signature: SchnorrSignature?): ByteArray {
         if (signature == null) return ByteArray(0)
         val signatureAsBytes = schnorrSignatureToBytes(signature)
@@ -38,12 +43,33 @@ object SchnorrSignatureSerializer {
         return bytesToSchnorrSignature(signatureBytes)
     }
 
+    fun deserializeSignatureListBytes(bytes: ByteArray): ArrayList<SchnorrSignature> {
+        val signatureBytesList = deserializeSignatureBytesList(bytes)
+        return ArrayList(signatureBytesList.map { x -> bytesToSchnorrSignature(x) })
+    }
+
     private fun serializeSchnorrBytes(signatureBytes: SchnorrSignatureBytes): ByteArray {
         val byteArrayOutputStream = ByteArrayOutputStream()
         val objectOutputStream = ObjectOutputStream(byteArrayOutputStream)
         objectOutputStream.writeObject(signatureBytes)
         objectOutputStream.close()
         return byteArrayOutputStream.toByteArray()
+    }
+
+    private fun serializeSchnorrBytesList(signatureList: List<SchnorrSignatureBytes>): ByteArray {
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val objectOutputStream = ObjectOutputStream(byteArrayOutputStream)
+        objectOutputStream.writeObject(signatureList)
+        objectOutputStream.close()
+        return byteArrayOutputStream.toByteArray()
+    }
+
+    private fun deserializeSignatureBytesList(bytes: ByteArray): List<SchnorrSignatureBytes> {
+        val byteArrayInputStream = ByteArrayInputStream(bytes)
+        val objectInputStream = ObjectInputStream(byteArrayInputStream)
+        val proofList = objectInputStream.readObject() as List<SchnorrSignatureBytes>
+        objectInputStream.close()
+        return proofList
     }
 
     private fun deserializeSignatureBytes(bytes: ByteArray): SchnorrSignatureBytes {

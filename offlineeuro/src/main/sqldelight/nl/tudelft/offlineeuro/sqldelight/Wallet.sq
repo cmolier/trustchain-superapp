@@ -1,51 +1,67 @@
+-- Table creation
 createWalletTable:
 CREATE TABLE IF NOT EXISTS Wallet (
     serialNumber TEXT NOT NULL,
     firstTheta1 BLOB NOT NULL,
     signature BLOB NOT NULL,
     previousProofs BLOB,
+    shnnorProofs BLOB NOT NULL,
     secretT BLOB NOT NULL,
     transactionSignature BLOB,
-    timesSpent INTEGER NOT NULL
+    timesSpent INTEGER NOT NULL,
+    ephermalPrivateKey BLOB NOT NULL
 );
 
+-- Insert statement
 insertWalletEntry:
-INSERT INTO Wallet(serialNumber,
+INSERT INTO Wallet(
+    serialNumber,
     firstTheta1,
     signature,
     previousProofs,
+    shnnorProofs,
     secretT,
     transactionSignature,
-    timesSpent)
-VALUES (?,
+    timesSpent,
+    ephermalPrivateKey
+)
+VALUES (
     ?,
     ?,
     ?,
     ?,
     ?,
-    0
+    ?,
+    ?,
+    0,
+    ?
 );
 
+-- Select by serialNumber, firstTheta1, signature
 getWalletEntryByDescriptor:
 SELECT *
 FROM Wallet
 WHERE serialNumber LIKE ? AND firstTheta1 = ? AND signature = ?;
 
+-- Select all entries
 getAllWalletEntries:
 SELECT *
 FROM Wallet;
 
+-- Select unspent entries
 getWalletEntriesToSpend:
 SELECT *
 FROM Wallet
 WHERE timesSpent = 0;
 
+-- Select a number of unspent entries
 getNumberOfWalletEntriesToSpend:
 SELECT *
 FROM Wallet
 WHERE timesSpent = 0
 LIMIT ?;
 
+-- Select a number of spent entries (double-spend)
 getNumberOfWalletEntriesToDoubleSpend:
 SELECT *
 FROM Wallet
@@ -53,16 +69,18 @@ WHERE timesSpent > 0
 ORDER BY timesSpent
 LIMIT ?;
 
-
+-- Select all spent entries (double-spend)
 getWalletEntriesToDoubleSpend:
 SELECT *
 FROM Wallet
 WHERE timesSpent > 0;
 
+-- Increment spend count for a given descriptor
 incrementTimesSpent:
 UPDATE Wallet
 SET timesSpent = timesSpent + 1
 WHERE serialNumber LIKE ? AND firstTheta1 = ? AND signature = ? AND previousProofs = ?;
 
+-- Clear the table
 clearWalletTable:
 DELETE FROM Wallet;
