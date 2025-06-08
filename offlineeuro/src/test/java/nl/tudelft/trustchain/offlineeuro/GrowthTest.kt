@@ -66,18 +66,21 @@ class GrowthTest {
             val publicKey = group.g.powZn(privateKey)
             val randomT = group.getRandomZr()
             val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
+            val ephemeralPrivateKey = group.getRandomZr()
+            val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
             val transactionDetails =
                 Transaction.createTransaction(
-                    privateKey,
-                    publicKey,
+                    ephemeralPrivateKey,
+                    ephemeralPublicKey,
                     entry,
                     randomizationElements,
                     group,
                     crs,
+                    publicKey
                 )
             println(transactionDetails.digitalEuro.sizeInBytes())
             // Assert.assertTrue("The transaction should be valid", Transaction.validate(transactionDetails, bank.publicKey, group, crs).valid)
-            entry = detailsToWalletEntry(transactionDetails, randomT)
+            entry = detailsToWalletEntry(transactionDetails, randomT, ephemeralPrivateKey = ephemeralPrivateKey)
         }
 
         return entry
@@ -169,13 +172,14 @@ class GrowthTest {
 
     fun detailsToWalletEntry(
         transactionDetails: TransactionDetails,
-        t: Element
+        t: Element,
+        ephemeralPrivateKey: Element
     ): WalletEntry {
         val digitalEuro = transactionDetails.digitalEuro
         digitalEuro.proofs.add(transactionDetails.currentTransactionProof.grothSahaiProof)
 
         val transactionSignature = transactionDetails.theta1Signature
-        return WalletEntry(digitalEuro, t, transactionSignature)
+        return WalletEntry(digitalEuro, t, transactionSignature, ephemeralPrivateKey = ephemeralPrivateKey)
     }
 
     private fun createBank() {

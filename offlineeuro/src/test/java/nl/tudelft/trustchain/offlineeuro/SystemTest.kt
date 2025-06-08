@@ -66,12 +66,16 @@ class SystemTest {
         createBank()
         val firstProofCaptor = argumentCaptor<ByteArray>()
         val secondProofCaptor = argumentCaptor<ByteArray>()
-        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), any())).then {
+        val doubleSpentEuroSchnorrSignatureCaptor = argumentCaptor<ByteArray>()
+        val ttpPublicKeyCaptor = argumentCaptor<ByteArray>()
+        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), doubleSpentEuroSchnorrSignatureCaptor.capture(), ttpPublicKeyCaptor.capture(), any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
+            val doubleSpentEuroSchnorrSignature = doubleSpentEuroSchnorrSignatureCaptor.lastValue
+            val ttpPublicKeyBytes = ttpPublicKeyCaptor.lastValue
 
             val peerMock = Mockito.mock(Peer::class.java)
-            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, peerMock)
+            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, doubleSpentEuroSchnorrSignature, ttpPublicKeyBytes, peerMock)
 
             val fraudControlResultCaptor = argumentCaptor<String>()
             `when`(ttpCommunity.sendFraudControlReply(fraudControlResultCaptor.capture(), any())).then {
