@@ -20,6 +20,7 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsReplyMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationRequestMessage
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElements
@@ -129,6 +130,16 @@ class IPV8CommunicationProtocol(
             ttpAddress.peerPublicKey!!
         )
         val message = waitForMessage(CommunityMessageType.FraudControlReplyMessage) as FraudControlReplyMessage
+        return message.result
+    }
+
+    override fun requestVerification(
+        hash: ByteArray,
+        nameTTP: String
+    ): String {
+        val ttpAddress = addressBookManager.getAddressByName(nameTTP)
+        community.sendVerificationRequest(hash, ttpAddress.peerPublicKey!!)
+        val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as FraudControlReplyMessage
         return message.result
     }
 
@@ -262,6 +273,15 @@ class IPV8CommunicationProtocol(
         community.sendFraudControlReply(result, message.requestingPeer)
     }
 
+    private fun handleVerificationRequestMessage(message: VerificationRequestMessage) {
+        if (getParticipantRole() != Role.TTP) {
+            return
+        }
+        val ttp = participant as TTP
+        val result = ttp.verifyHash(message.hash)
+        community.sendVerificationReply(result, message.requestingPeer)
+    }
+
     private fun handleRequestMessage(message: ICommunityMessage) {
         when (message) {
             is AddressMessage -> handleAddressMessage(message)
@@ -273,6 +293,7 @@ class IPV8CommunicationProtocol(
             is TransactionMessage -> handleTransactionMessage(message)
             is TTPRegistrationMessage -> handleRegistrationMessage(message)
             is FraudControlRequestMessage -> handleFraudControlRequestMessage(message)
+            is VerificationRequestMessage -> handleVerificationRequestMessage(message)
             else -> throw Exception("Unsupported message type")
         }
         return
