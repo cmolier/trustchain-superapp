@@ -154,7 +154,8 @@ class OfflineEuroCommunity(
     fun registerAtTTP(
         name: String,
         myPublicKeyBytes: ByteArray,
-        publicKeyTTP: ByteArray
+        publicKeyTTP: ByteArray,
+        source: String
     ) {
         val ttpPeer = getPeerByPublicKeyBytes(publicKeyTTP) ?: throw Exception("TTP not found")
 
@@ -163,7 +164,8 @@ class OfflineEuroCommunity(
                 MessageID.REGISTER_AT_TTP,
                 TTPRegistrationPayload(
                     name,
-                    myPublicKeyBytes
+                    myPublicKeyBytes,
+                    source
                 )
             )
 
@@ -182,12 +184,14 @@ class OfflineEuroCommunity(
         val senderPKBytes = peer.publicKey.keyToBin()
         val userName = payload.userName
         val userPKBytes = payload.publicKey
+        val source = payload.source
 
         val message =
             TTPRegistrationMessage(
                 userName,
                 userPKBytes,
-                senderPKBytes
+                senderPKBytes,
+                source
             )
 
         addMessage(message)

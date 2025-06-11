@@ -7,12 +7,14 @@ import nl.tudelft.ipv8.messaging.serializeVarLen
 
 class TTPRegistrationPayload(
     val userName: String,
-    val publicKey: ByteArray
+    val publicKey: ByteArray,
+    val source: String
 ) : Serializable {
     override fun serialize(): ByteArray {
         var payload = ByteArray(0)
         payload += serializeVarLen(userName.toByteArray())
         payload += serializeVarLen(publicKey)
+        payload += serializeVarLen(source.toByteArray())
         return payload
     }
 
@@ -27,11 +29,14 @@ class TTPRegistrationPayload(
             localOffset += nameSize
             val (publicKeyBytes, publicKeyBytesSize) = deserializeVarLen(buffer, localOffset)
             localOffset += publicKeyBytesSize
+            val (sourceBytes, sourceSize) = deserializeVarLen(buffer, localOffset)
+            localOffset += sourceSize
 
             return Pair(
                 TTPRegistrationPayload(
                     nameBytes.toString(Charsets.UTF_8),
-                    publicKeyBytes
+                    publicKeyBytes,
+                    sourceBytes.toString(Charsets.UTF_8)
                 ),
                 localOffset - offset
             )

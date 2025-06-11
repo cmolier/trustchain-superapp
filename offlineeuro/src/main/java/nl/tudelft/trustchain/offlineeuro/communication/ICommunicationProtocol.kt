@@ -16,7 +16,8 @@ interface ICommunicationProtocol {
     fun register(
         userName: String,
         publicKey: Element,
-        nameTTP: String
+        nameTTP: String,
+        source: String
     )
 
     fun getBlindSignatureRandomness(

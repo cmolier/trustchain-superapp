@@ -85,7 +85,7 @@ class IPV8CommunicationProtocolTest {
 
         `when`(community.sendGroupDescriptionAndCRS(any(), any(), any(), any())).then { }
 
-        `when`(community.registerAtTTP(any(), any(), any())).then { }
+        `when`(community.registerAtTTP(any(), any(), any(), source="userhome")).then { }
 
         `when`(community.sendBlindSignatureRandomnessReply(any(), any())).then { }
         `when`(community.sendBlindSignature(any(), any())).then { }
@@ -160,9 +160,9 @@ class IPV8CommunicationProtocolTest {
         iPV8CommunicationProtocol.messageList.add(
             AddressMessage(ttpAddress.name, ttpAddress.type, ttpAddress.publicKey.toBytes(), ttpAddress.peerPublicKey!!)
         )
-        iPV8CommunicationProtocol.register(userName, publicKey, ttpAddress.name)
+        iPV8CommunicationProtocol.register(userName, publicKey, ttpAddress.name, source="userhome")
         // Assert that the registration request is sent correctly
-        verify(community, times(1)).registerAtTTP(userName, publicKey.toBytes(), ttpAddress.peerPublicKey!!)
+        verify(community, times(1)).registerAtTTP(userName, publicKey.toBytes(), ttpAddress.peerPublicKey!!, source="userhome")
     }
 
     @Test

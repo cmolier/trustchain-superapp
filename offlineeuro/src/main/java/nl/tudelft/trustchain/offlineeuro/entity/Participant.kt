@@ -35,7 +35,7 @@ abstract class Participant(
 
     fun registerAtTTP() {
         // TODO NAME OF TTP
-        communicationProtocol.register(name, publicKey, "TTP")
+        communicationProtocol.register(name, publicKey, "TTP", source="other")
     }
 
     fun generateRandomizationElements(receiverPublicKey: Element): RandomizationElements {

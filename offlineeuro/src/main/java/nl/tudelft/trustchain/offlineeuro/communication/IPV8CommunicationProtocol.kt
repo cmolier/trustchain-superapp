@@ -62,10 +62,11 @@ class IPV8CommunicationProtocol(
     override fun register(
         userName: String,
         publicKey: Element,
-        nameTTP: String
+        nameTTP: String,
+        source: String
     ) {
         val ttpAddress = addressBookManager.getAddressByName(nameTTP)
-        community.registerAtTTP(userName, publicKey.toBytes(), ttpAddress.peerPublicKey!!)
+        community.registerAtTTP(userName, publicKey.toBytes(), ttpAddress.peerPublicKey!!, source)
     }
 
     override fun getBlindSignatureRandomness(
@@ -242,7 +243,7 @@ class IPV8CommunicationProtocol(
 
         val ttp = participant as TTP
         val publicKey = ttp.group.gElementFromBytes(message.userPKBytes)
-        ttp.registerUser(message.userName, publicKey)
+        ttp.registerUser(message.userName, publicKey, message.source)
     }
 
     private fun handleAddressRequestMessage(message: AddressRequestMessage) {

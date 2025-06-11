@@ -37,7 +37,8 @@ object CallbackLibrary {
         if (message != null) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
-        if (message != null && message.contains("xd")) {
+        Log.println(Log.ERROR, "TTP Callback", "Message: $message")
+        if (message != null && message.contains("userhome")) {
             val activity = context as? FragmentActivity
 
             val navHostFragment = activity?.supportFragmentManager?.fragments?.firstOrNull { it is androidx.navigation.fragment.NavHostFragment } as? androidx.navigation.fragment.NavHostFragment

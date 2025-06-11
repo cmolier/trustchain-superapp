@@ -29,10 +29,11 @@ class TTP(
 
     fun registerUser(
         name: String,
-        publicKey: Element
+        publicKey: Element,
+        source: String
     ): Boolean {
         val result = registeredUserManager.addRegisteredUser(name, publicKey)
-        onDataChangeCallback?.invoke("Registered $name")
+        onDataChangeCallback?.invoke("Registered $name from $source")
         return result
     }
 
