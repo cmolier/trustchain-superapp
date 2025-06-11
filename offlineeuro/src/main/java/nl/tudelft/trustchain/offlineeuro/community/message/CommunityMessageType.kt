@@ -25,7 +25,4 @@ enum class CommunityMessageType {
 
     FraudControlRequestMessage,
     FraudControlReplyMessage,
-
-    VerificationRequestMessage,
-    VerificationReplyMessage,
 }
