@@ -1,6 +1,7 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout

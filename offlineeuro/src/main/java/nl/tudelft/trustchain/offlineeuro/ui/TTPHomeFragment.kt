@@ -3,6 +3,7 @@ package nl.tudelft.trustchain.offlineeuro.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import androidx.appcompat.app.AlertDialog
 import nl.tudelft.trustchain.offlineeuro.R
 import nl.tudelft.trustchain.offlineeuro.communication.IPV8CommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
@@ -35,16 +36,42 @@ class TTPHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_ttp_home) {
         onDataChangeCallback(null)
 
         view.findViewById<Button>(R.id.GenerateQRCodeButton).setOnClickListener {
-            val fragment = QRCodeFullScreenFragment.newInstance(
-                qrString = "otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example",
-                secret = "Secret: JBSWY3DPEHPK3PXP"
-            )
-            requireActivity().supportFragmentManager.beginTransaction()
-                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
-                .add(android.R.id.content, fragment)
-                .addToBackStack(null)
-                .commit()
+            showUserSelectionDialog()
         }
+    }
+
+    private fun showUserSelectionDialog() {
+        val users = ttp.getRegisteredUsers()
+        if (users.isEmpty()) {
+            AlertDialog.Builder(requireContext())
+                .setTitle("No Users")
+                .setMessage("There are no registered users to generate QR codes for.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val userNames = users.map { it.name }.toTypedArray()
+        
+        AlertDialog.Builder(requireContext())
+            .setTitle("Select User")
+            .setItems(userNames) { _, which ->
+                val selectedUser = users[which]
+                val qrString = "otpauth://totp/${selectedUser.name}@offlineeuro?secret=${selectedUser.googleKey}&issuer=OfflineEuro"
+                val fragment = QRCodeFullScreenFragment.newInstance(
+                    qrString = qrString,
+                    secret = "Secret: ${selectedUser.googleKey}"
+                )
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+                    .add(android.R.id.content, fragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private val onDataChangeCallback: (String?) -> Unit = { message ->
