@@ -1,10 +1,12 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.content.Context
+import android.util.Log
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.fragment.app.FragmentActivity
 import nl.tudelft.trustchain.offlineeuro.R
 import nl.tudelft.trustchain.offlineeuro.communication.IPV8CommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.entity.Bank
@@ -34,6 +36,20 @@ object CallbackLibrary {
     ) {
         if (message != null) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+        if (message != null && message.contains("xd")) {
+            val activity = context as? FragmentActivity
+
+            val navHostFragment = activity?.supportFragmentManager?.fragments?.firstOrNull { it is androidx.navigation.fragment.NavHostFragment } as? androidx.navigation.fragment.NavHostFragment
+            val currentFragment = navHostFragment?.childFragmentManager?.fragments?.firstOrNull()
+            var fragment = currentFragment as? TTPHomeFragment
+
+            // If not found, check if current fragment is AllRolesFragment
+            if (fragment == null && currentFragment is AllRolesFragment) {
+                val childFragments = currentFragment.childFragmentManager.fragments
+                fragment = childFragments.firstOrNull { it is TTPHomeFragment } as? TTPHomeFragment
+            }
+            fragment?.showUserSelectionDialog()
         }
         updateUserList(view, ttp)
     }

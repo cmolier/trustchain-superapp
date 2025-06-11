@@ -28,13 +28,12 @@ class QRCodeFullScreenFragment : Fragment() {
         val closeButton = view.findViewById<ImageButton>(R.id.closeButton)
 
         val qrString = arguments?.getString("qrString") ?: ""
-        val secret = arguments?.getString("secret") ?: ""
 
         val qrBitmap: Bitmap? = QRCodeUtils(requireContext()).createQR(qrString)
         qrBitmap?.let {
             qrCodeImageView.setImageBitmap(it)
         }
-        qrCodeSecretTextView.text = secret
+        qrCodeSecretTextView.text = qrString
 
         closeButton.setOnClickListener {
             requireActivity().supportFragmentManager.beginTransaction()
@@ -45,11 +44,10 @@ class QRCodeFullScreenFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance(qrString: String, secret: String): QRCodeFullScreenFragment {
+        fun newInstance(qrString: String,): QRCodeFullScreenFragment {
             val fragment = QRCodeFullScreenFragment()
             val args = Bundle()
             args.putString("qrString", qrString)
-            args.putString("secret", secret)
             fragment.arguments = args
             return fragment
         }

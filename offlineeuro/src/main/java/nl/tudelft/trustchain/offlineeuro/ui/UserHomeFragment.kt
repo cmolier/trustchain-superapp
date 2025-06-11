@@ -1,11 +1,17 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanIntentResult
+import com.journeyapps.barcodescanner.ScanOptions
 import nl.tudelft.trustchain.offlineeuro.R
 import nl.tudelft.trustchain.offlineeuro.communication.IPV8CommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
@@ -63,6 +69,69 @@ class UserHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_user_home) {
         val addresses = communicationProtocol.addressBookManager.getAllAddresses()
         TableHelpers.addAddressesToTable(addressList, addresses, user, requireContext())
         onUserDataChangeCallBack(null)
+
+        val qrCodeSecretTextView = view.findViewById<TextView>(R.id.qrCodeSecretTextView)
+        qrCodeSecretTextView.text = user.name
+
+        checkCameraPermissionAndScan()
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            startQRScanner()
+        } else {
+            Toast.makeText(context, "Camera permission is required to scan QR codes", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun startQRScanner() {
+        val options = ScanOptions().apply {
+            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            setPrompt("Scan QR Code")
+            setCameraId(0)
+            setBeepEnabled(true)
+            setBarcodeImageEnabled(true)
+            setOrientationLocked(true)
+        }
+        barcodeLauncher.launch(options)
+    }
+
+    private val barcodeLauncher = registerForActivityResult(ScanContract()) { result: ScanIntentResult ->
+        if (result.contents == null) {
+            Toast.makeText(context, "Scan cancelled", Toast.LENGTH_SHORT).show()
+        } else {
+            handleQRResult(result.contents)
+        }
+    }
+
+    private fun handleQRResult(qrContent: String) {
+        Toast.makeText(context, "Scanned: $qrContent", Toast.LENGTH_LONG).show()
+
+        view?.findViewById<TextView>(R.id.qrCodeSecretTextView)?.text = qrContent
+    }
+
+    private fun checkCameraPermissionAndScan() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                startQRScanner()
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
+                Toast.makeText(
+                    context,
+                    "Camera permission is needed to scan QR codes",
+                    Toast.LENGTH_LONG
+                ).show()
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
     }
 
     private val onUserDataChangeCallBack: (String?) -> Unit = { message ->

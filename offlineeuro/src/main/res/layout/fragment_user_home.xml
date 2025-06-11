@@ -170,16 +170,51 @@
                 android:text="Sync Address list" />
         </LinearLayout>
     <LinearLayout
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:id="@+id/buttonPanel"
+        android:orientation="horizontal"
         android:layout_marginBottom="10dp">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.1"
+            />
 
         <Button
             android:id="@+id/user_home_reset_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Reset"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.1"
+            />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.1"
+            />
+
+        <TextView
+            android:id="@+id/qrCodeSecretTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="48dp"
+            android:textColor="#888888"
+            android:textSize="18sp"
+            android:text="Tap scan button to start"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.1"
+            />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

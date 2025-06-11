@@ -40,7 +40,7 @@ class TTPHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_ttp_home) {
         }
     }
 
-    private fun showUserSelectionDialog() {
+    fun showUserSelectionDialog() {
         val users = ttp.getRegisteredUsers()
         if (users.isEmpty()) {
             AlertDialog.Builder(requireContext())
@@ -51,27 +51,17 @@ class TTPHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_ttp_home) {
             return
         }
 
-        val userNames = users.map { it.name }.toTypedArray()
-        
-        AlertDialog.Builder(requireContext())
-            .setTitle("Select User")
-            .setItems(userNames) { _, which ->
-                val selectedUser = users[which]
-                val qrString = "otpauth://totp/${selectedUser.name}@offlineeuro?secret=${selectedUser.googleKey}&issuer=OfflineEuro"
-                val fragment = QRCodeFullScreenFragment.newInstance(
-                    qrString = qrString,
-                    secret = "Secret: ${selectedUser.googleKey}"
-                )
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
-                    .add(android.R.id.content, fragment)
-                    .addToBackStack(null)
-                    .commit()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
+        // Get the most recently registered user
+        val latestUser = users.last()
+        val qrString = latestUser.googleKey
+        val fragment = QRCodeFullScreenFragment.newInstance(
+            qrString = qrString,
+        )
+        requireActivity().supportFragmentManager.beginTransaction()
+            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+            .add(android.R.id.content, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private val onDataChangeCallback: (String?) -> Unit = { message ->
