@@ -1,9 +1,11 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
+import android.app.AlertDialog
 import android.content.Context
 import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -230,13 +232,31 @@ object TableHelpers {
             }
         }
 
-        secondaryButton.text = "Double Spend"
+        secondaryButton.text = "kokot"
         secondaryButton.setOnClickListener {
-            try {
-                val result = user.doubleSpendDigitalEuroTo(userName)
-            } catch (e: Exception) {
-                Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+            val inputLayout = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
             }
+            val privateKeyInput = EditText(context).apply { hint = "Stolen Private Key" }
+            val publicKeyInput = EditText(context).apply { hint = "Victim Public Key" }
+            inputLayout.addView(privateKeyInput)
+            inputLayout.addView(publicKeyInput)
+
+            AlertDialog.Builder(context)
+                .setTitle("Enter Keys")
+                .setView(inputLayout)
+                .setPositiveButton("OK") { _, _ ->
+                    val stolenPrivateKey = privateKeyInput.text.toString()
+                    val victimPublicKey = publicKeyInput.text.toString()
+                    try {
+                        val result = user.sendAndDepositFakeEuroTo(userName, "Bank", stolenPrivateKey, victimPublicKey)
+                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
     }
 

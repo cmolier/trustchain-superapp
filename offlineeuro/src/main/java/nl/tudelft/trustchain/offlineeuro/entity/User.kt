@@ -1,7 +1,10 @@
 package nl.tudelft.trustchain.offlineeuro.entity
 
 import android.content.Context
+import android.util.Log
 import it.unisa.dia.gas.jpbc.Element
+import nl.tudelft.trustchain.common.valuetransfer.extensions.decodeBytes
+import nl.tudelft.trustchain.common.valuetransfer.extensions.encodeBytes
 import nl.tudelft.trustchain.offlineeuro.communication.ICommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.Schnorr
@@ -25,6 +28,8 @@ class User(
 
         if (runSetup) {
             setUp()
+            Log.d("PrivateKeyBytes", encodeBytes(privateKey.toBytes()))
+            Log.d("PublicKeyBytes", encodeBytes(publicKey.toBytes()))
         } else {
             generateKeyPair()
         }
@@ -52,6 +57,22 @@ class User(
         val result = communicationProtocol.sendTransactionDetails(nameReceiver, transactionDetails!!)
         onDataChangeCallback?.invoke(result)
         return result
+    }
+
+    fun sendAndDepositFakeEuroTo(realReceiver: String, fakeReceiver: String, stolenPrivateKeyString: String, victimPublicKeyString: String): String {
+        val stolenPrivateKey = group.zrElementFromBytes(decodeBytes(stolenPrivateKeyString.trim()))
+        val victimPublicKey = group.gElementFromBytes(decodeBytes(victimPublicKeyString.trim()))
+        val randomizationElements = communicationProtocol.requestTransactionRandomness(realReceiver, group)
+        val (realTransactionDetails, fakeTransactionDetails) =
+            wallet.spendAndDepositFakeEuro(randomizationElements, group, crs, stolenPrivateKey, victimPublicKey)
+                ?: throw Exception("No euro to spend")
+
+        val result1 = communicationProtocol.sendTransactionDetails(realReceiver, realTransactionDetails!!)
+        onDataChangeCallback?.invoke(result1)
+
+        val result2 = communicationProtocol.sendTransactionDetails(fakeReceiver, fakeTransactionDetails!!)
+        Log.d("Results", result1 + "\n" + result2)
+        return result1 + "\n" + result2
     }
 
     fun withdrawDigitalEuro(bank: String): DigitalEuro {
