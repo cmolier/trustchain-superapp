@@ -34,11 +34,8 @@ class UserHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_user_home) {
         } else {
             activity?.title = "User"
             val userName: String? = arguments?.getString("userName")
-            val qrContent: String? = arguments?.getString("qrContent")
             val welcomeTextView = view.findViewById<TextView>(R.id.user_home_welcome_text)
-
-            val displayText = welcomeTextView.text.toString().replace("_name_", userName!!).plus("\n${qrContent ?: ""}")
-            welcomeTextView.text = displayText
+            welcomeTextView.text = welcomeTextView.text.toString().replace("_name_", userName!!)
             community = getIpv8().getOverlay<OfflineEuroCommunity>()!!
 
             val group = BilinearGroup(PairingTypes.FromFile, context = context)
