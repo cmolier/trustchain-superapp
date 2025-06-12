@@ -80,18 +80,19 @@ class Wallet(
         return Transaction.createTransaction(privateKey, publicKey, walletEntry, randomizationElements, bilinearGroup, crs)
     }
 
-    fun spendAndDepositFakeEuro(
+    fun spendAndSendEuroToSelf(
         randomizationElements: RandomizationElements,
         bilinearGroup: BilinearGroup,
         crs: CRS,
         stolenPrivateKey: Element,
-        victimPublicKey: Element
+        victimPublicKey: Element,
+        victimRandomizationElements: RandomizationElements
     ): Pair<TransactionDetails?, TransactionDetails?>? {
         val walletEntry = walletManager.getNumberOfWalletEntriesToSpend(1).firstOrNull() ?: return null
         val euro = walletEntry.digitalEuro
         walletManager.incrementTimesSpent(euro)
         val original = Transaction.createTransaction(privateKey, publicKey, walletEntry, randomizationElements, bilinearGroup, crs)
-        val fake = Transaction.createTransaction(stolenPrivateKey, victimPublicKey, walletEntry, randomizationElements, bilinearGroup, crs)
+        val fake = Transaction.createTransaction(stolenPrivateKey, victimPublicKey, walletEntry, victimRandomizationElements, bilinearGroup, crs)
         return Pair(original, fake)
     }
 }

@@ -29,7 +29,6 @@ class User(
         if (runSetup) {
             setUp()
             Log.d("PrivateKeyBytes", encodeBytes(privateKey.toBytes()))
-            Log.d("PublicKeyBytes", encodeBytes(publicKey.toBytes()))
         } else {
             generateKeyPair()
         }
@@ -59,18 +58,20 @@ class User(
         return result
     }
 
-    fun sendAndDepositFakeEuroTo(realReceiver: String, fakeReceiver: String, stolenPrivateKeyString: String, victimPublicKeyString: String): String {
+    fun sendAndDepositFakeEuroTo(victimName: String, otherReceiver: String, stolenPrivateKeyString: String): String {
         val stolenPrivateKey = group.zrElementFromBytes(decodeBytes(stolenPrivateKeyString.trim()))
-        val victimPublicKey = group.gElementFromBytes(decodeBytes(victimPublicKeyString.trim()))
-        val randomizationElements = communicationProtocol.requestTransactionRandomness(realReceiver, group)
+        val victimPublicKey = group.g.powZn(stolenPrivateKey)
+        val randomizationElements = communicationProtocol.requestTransactionRandomness(victimName, group)
+        val victimRandomizationElements = communicationProtocol.requestTransactionRandomness(otherReceiver, group)
         val (realTransactionDetails, fakeTransactionDetails) =
-            wallet.spendAndDepositFakeEuro(randomizationElements, group, crs, stolenPrivateKey, victimPublicKey)
+            wallet.spendAndSendEuroToSelf(randomizationElements, group, crs, stolenPrivateKey, victimPublicKey, victimRandomizationElements)
                 ?: throw Exception("No euro to spend")
 
-        val result1 = communicationProtocol.sendTransactionDetails(realReceiver, realTransactionDetails!!)
+        val result1 = communicationProtocol.sendTransactionDetails(victimName, realTransactionDetails!!)
         onDataChangeCallback?.invoke(result1)
 
-        val result2 = communicationProtocol.sendTransactionDetails(fakeReceiver, fakeTransactionDetails!!)
+        val result2 = communicationProtocol.sendTransactionDetails(otherReceiver, fakeTransactionDetails!!)
+        onDataChangeCallback?.invoke(result2)
         Log.d("Results", result1 + "\n" + result2)
         return result1 + "\n" + result2
     }

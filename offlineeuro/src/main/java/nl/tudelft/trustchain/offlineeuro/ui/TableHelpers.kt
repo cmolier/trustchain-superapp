@@ -238,18 +238,18 @@ object TableHelpers {
                 orientation = LinearLayout.VERTICAL
             }
             val privateKeyInput = EditText(context).apply { hint = "Stolen Private Key" }
-            val publicKeyInput = EditText(context).apply { hint = "Victim Public Key" }
+            val otherReceiverInput = EditText(context).apply { hint = "Other Receiver Rame" }
             inputLayout.addView(privateKeyInput)
-            inputLayout.addView(publicKeyInput)
+            inputLayout.addView(otherReceiverInput)
 
             AlertDialog.Builder(context)
-                .setTitle("Enter Keys")
+                .setTitle("Enter Credentials")
                 .setView(inputLayout)
                 .setPositiveButton("OK") { _, _ ->
                     val stolenPrivateKey = privateKeyInput.text.toString()
-                    val victimPublicKey = publicKeyInput.text.toString()
+                    val otherReceiverName = otherReceiverInput.text.toString()
                     try {
-                        val result = user.sendAndDepositFakeEuroTo(userName, "Bank", stolenPrivateKey, victimPublicKey)
+                        val result = user.sendAndDepositFakeEuroTo(userName, otherReceiverName, stolenPrivateKey)
                         Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
