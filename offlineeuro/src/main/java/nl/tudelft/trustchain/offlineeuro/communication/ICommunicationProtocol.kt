@@ -48,8 +48,15 @@ interface ICommunicationProtocol {
         nameTTP: String
     ): String
 
+    fun requestVerification(
+        hash: ByteArray,
+        nameTTP: String
+    ): String
+
     fun getPublicKeyOf(
         name: String,
         group: BilinearGroup
     ): Element
+
+
 }

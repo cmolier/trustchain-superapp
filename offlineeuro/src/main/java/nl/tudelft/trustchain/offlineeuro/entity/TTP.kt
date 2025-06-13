@@ -74,6 +74,12 @@ class TTP(
         }
     }
 
+    fun verifyHash(
+        hash: ByteArray
+    ): String {
+        return ""
+    }
+
     override fun reset() {
         registeredUserManager.clearAllRegisteredUsers()
     }
