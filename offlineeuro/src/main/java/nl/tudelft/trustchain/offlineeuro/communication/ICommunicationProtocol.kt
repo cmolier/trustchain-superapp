@@ -49,6 +49,7 @@ interface ICommunicationProtocol {
     ): String
 
     fun requestVerification(
+        sendingRequestUsername: String,
         hash: ByteArray,
         nameTTP: String
     ): String

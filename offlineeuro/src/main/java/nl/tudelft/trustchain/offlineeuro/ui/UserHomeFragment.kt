@@ -111,6 +111,7 @@ class UserHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_user_home) {
         Toast.makeText(context, "Scanned: $qrContent", Toast.LENGTH_LONG).show()
 
         view?.findViewById<TextView>(R.id.qrCodeSecretTextView)?.text = qrContent
+        TableHelpers.googleKey = qrContent
     }
 
     private fun checkCameraPermissionAndScan() {

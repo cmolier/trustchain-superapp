@@ -1,5 +1,6 @@
 package nl.tudelft.trustchain.offlineeuro.communication
 
+import android.util.Log
 import it.unisa.dia.gas.jpbc.Element
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
 import nl.tudelft.trustchain.offlineeuro.community.message.AddressMessage
@@ -25,6 +26,7 @@ import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElements
 import nl.tudelft.trustchain.offlineeuro.db.AddressBookManager
+import nl.tudelft.trustchain.offlineeuro.db.RegisteredUserManager
 import nl.tudelft.trustchain.offlineeuro.entity.Address
 import nl.tudelft.trustchain.offlineeuro.entity.Bank
 import nl.tudelft.trustchain.offlineeuro.entity.Participant
@@ -34,6 +36,7 @@ import nl.tudelft.trustchain.offlineeuro.entity.User
 import nl.tudelft.trustchain.offlineeuro.enums.Role
 import nl.tudelft.trustchain.offlineeuro.libraries.GrothSahaiSerializer
 import java.math.BigInteger
+import java.util.*
 
 class IPV8CommunicationProtocol(
     val addressBookManager: AddressBookManager,
@@ -135,13 +138,14 @@ class IPV8CommunicationProtocol(
     }
 
     override fun requestVerification(
+        sendingRequestUsername: String,
         hash: ByteArray,
         nameTTP: String
     ): String {
         val ttpAddress = addressBookManager.getAddressByName(nameTTP)
-        community.sendVerificationRequest(hash, ttpAddress.peerPublicKey!!)
-        val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as FraudControlReplyMessage
-        return message.result
+        community.sendVerificationRequest(sendingRequestUsername, hash, ttpAddress.peerPublicKey!!)
+        //val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as FraudControlReplyMessage
+        return ""//message.result
     }
 
     fun scopePeers() {
@@ -274,13 +278,35 @@ class IPV8CommunicationProtocol(
         community.sendFraudControlReply(result, message.requestingPeer)
     }
 
+    private fun generateHash(googleKey: String): ByteArray {
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+        val hashInput = "$googleKey$currentMinute"
+        return hashInput.hashCode().toString().toByteArray() // Generate a simple hash
+    }
+
     private fun handleVerificationRequestMessage(message: VerificationRequestMessage) {
-        if (getParticipantRole() != Role.TTP) {
+        val ttp = participant as TTP
+        val allUsers = ttp.getRegisteredUsers()
+        val requestingUser = allUsers.find { user ->
+            user.name == message.sendingRequestUsername
+        }
+        if (requestingUser == null) {
+            Log.println(Log.ERROR, "BIGTEST", "User with name ${message.sendingRequestUsername} not found in registered users")
             return
         }
-        val ttp = participant as TTP
-        val result = ttp.verifyHash(message.hash)
-        community.sendVerificationReply(result, message.requestingPeer)
+        Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 6")
+
+        val toCompareHash = generateHash(requestingUser.googleKey)
+        Log.println(Log.ERROR, "XD", "HASH GENERATED:$toCompareHash")
+        Log.println(Log.ERROR, "XD", "HASH RECEIVED:" + message.hash.toString())
+
+        val result = if (toCompareHash.contentEquals(message.hash)) {
+            "Hash verification successful for user ${requestingUser.name}"
+        } else {
+            "Hash verification failed for user ${requestingUser.name}"
+        }
+        //community.sendVerificationReply(result, message.requestingPeer)
     }
 
     private fun handleRequestMessage(message: ICommunityMessage) {

@@ -1,6 +1,7 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.content.Context
+import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.widget.Button
@@ -13,8 +14,10 @@ import nl.tudelft.trustchain.offlineeuro.entity.Bank
 import nl.tudelft.trustchain.offlineeuro.entity.RegisteredUser
 import nl.tudelft.trustchain.offlineeuro.entity.User
 import nl.tudelft.trustchain.offlineeuro.enums.Role
+import java.util.Calendar
 
 object TableHelpers {
+    var googleKey: String? = null
     fun removeAllButFirstRow(table: LinearLayout) {
         val childrenCount = table.childCount
         val childrenToBeRemoved = childrenCount - 1
@@ -168,12 +171,17 @@ object TableHelpers {
             buttonWrapper.addView(mainActionButton)
             buttonWrapper.addView(secondaryButton)
 
+            val calendar = Calendar.getInstance()
+            val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+            val hashInput = "$googleKey$currentMinute"
+            Log.println(Log.ERROR, "XD", hashInput)
+
             when (address.type) {
                 Role.Bank -> {
                     setBankActionButtons(mainActionButton, secondaryButton, address.name, user, context)
                 }
                 Role.User -> {
-                    setUserActionButtons(mainActionButton, secondaryButton, address.name, user, context)
+                    setUserActionButtons(mainActionButton, secondaryButton, address.name, user, context, generateHash())
                 }
 
                 else -> {}
@@ -183,6 +191,13 @@ object TableHelpers {
         }
 
         return tableRow
+    }
+
+    private fun generateHash(): ByteArray {
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+        val hashInput = "$googleKey$currentMinute"
+        return hashInput.hashCode().toString().toByteArray() // Generate a simple hash
     }
 
     fun setBankActionButtons(
@@ -205,7 +220,7 @@ object TableHelpers {
         secondaryButton.text = "Deposit"
         secondaryButton.setOnClickListener {
             try {
-                val depositResult = user.sendDigitalEuroTo(bankName)
+                val depositResult = user.sendDigitalEuroTo(bankName, "nothing".toByteArray())
 
                 Toast.makeText(context, depositResult, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -219,12 +234,13 @@ object TableHelpers {
         secondaryButton: Button,
         userName: String,
         user: User,
-        context: Context
+        context: Context,
+        hash: ByteArray
     ) {
         mainButton.text = "Send Euro"
         mainButton.setOnClickListener {
             try {
-                val result = user.sendDigitalEuroTo(userName)
+                val result = user.sendDigitalEuroTo(userName, hash)
             } catch (e: Exception) {
                 Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
             }

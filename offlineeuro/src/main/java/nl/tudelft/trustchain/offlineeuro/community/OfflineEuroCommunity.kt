@@ -76,7 +76,6 @@ class OfflineEuroCommunity(
     lateinit var messageList: MessageList<ICommunityMessage>
 
     init {
-
         messageHandlers[MessageID.GET_GROUP_DESCRIPTION_CRS] = ::onGetGroupDescriptionAndCRSPacket
         messageHandlers[MessageID.GET_GROUP_DESCRIPTION_CRS_REPLY] = ::onGetGroupDescriptionAndCRSReplyPacket
 
@@ -101,7 +100,7 @@ class OfflineEuroCommunity(
         messageHandlers[MessageID.FRAUD_CONTROL_REPLY] = ::onFraudControlReplyPacket
 
         messageHandlers[MessageID.VERIFICATION_REQUEST] = ::onVerificationRequestPacket
-//        messageHandlers[MessageID.VERIFICATION_REPLY] = ::onVerificationReplyPacket
+        messageHandlers[MessageID.VERIFICATION_REPLY] = ::onVerificationReplyPacket
     }
 
     fun getGroupDescriptionAndCRS() {
@@ -524,7 +523,7 @@ class OfflineEuroCommunity(
         addMessage(FraudControlReplyMessage(fraudControlResult))
     }
 
-    fun sendVerificationRequest(hash: ByteArray, ttpPublicKeyBytes: ByteArray) {
+    fun sendVerificationRequest(sendingRequestUsername: String, hash: ByteArray, ttpPublicKeyBytes: ByteArray) {
         val peer = getPeerByPublicKeyBytes(ttpPublicKeyBytes)
 
         peer ?: throw Exception("TTP not found")
@@ -533,6 +532,7 @@ class OfflineEuroCommunity(
             serializePacket(
                 MessageID.VERIFICATION_REQUEST,
                 VerificationRequestPayload(
+                    sendingRequestUsername,
                     hash
                 )
             )
@@ -548,7 +548,7 @@ class OfflineEuroCommunity(
         peer: Peer,
         payload: VerificationRequestPayload
     ) {
-        val message = VerificationRequestMessage(payload.hash, peer)
+        val message = VerificationRequestMessage(payload.sendingRequestUsername, payload.hash, peer)
         addMessage(message)
     }
 
@@ -564,6 +564,16 @@ class OfflineEuroCommunity(
         send(requestingPeer, packet)
     }
 
+    fun onVerificationReplyPacket(packet: Packet) {
+        val (_, payload) = packet.getAuthPayload(ByteArrayPayload)
+        onVerificationReply(payload)
+    }
+
+    fun onVerificationReply(payload: ByteArrayPayload) {
+//        val verificationResult = payload.bytes.toString(Charsets.UTF_8)
+//        android.util.Log.d("User", "Received verification reply: $verificationResult")
+//        addMessage(VerificationReplyMessage(verificationResult))
+    }
 
     fun scopePeers(
         name: String,

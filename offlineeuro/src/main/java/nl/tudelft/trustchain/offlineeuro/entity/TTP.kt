@@ -41,6 +41,13 @@ class TTP(
         return registeredUserManager.getAllRegisteredUsers()
     }
 
+    fun verifyHash(hash: ByteArray): String {
+        android.util.Log.d("TTP", "Verifying hash: ${hash}")
+        // For now, we'll just acknowledge receipt of the hash
+        // In a real implementation, this would verify the hash against some database or blockchain
+        return "Hash verification request received: ${hash}"
+    }
+
     override fun onReceivedTransaction(
         transactionDetails: TransactionDetails,
         publicKeyBank: Element,
@@ -72,12 +79,6 @@ class TTP(
             onDataChangeCallback?.invoke("Invalid fraud request received!")
             "No double spending detected"
         }
-    }
-
-    fun verifyHash(
-        hash: ByteArray
-    ): String {
-        return ""
     }
 
     override fun reset() {
