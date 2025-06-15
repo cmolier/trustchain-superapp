@@ -41,6 +41,8 @@ import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetailsBytes
 import nl.tudelft.trustchain.offlineeuro.enums.Role
 import java.math.BigInteger
 
+import android.util.Log
+
 object MessageID {
     const val GET_GROUP_DESCRIPTION_CRS = 9
     const val GET_GROUP_DESCRIPTION_CRS_REPLY = 10
@@ -525,7 +527,7 @@ class OfflineEuroCommunity(
 
     fun sendVerificationRequest(sendingRequestUsername: String, hash: ByteArray, ttpPublicKeyBytes: ByteArray) {
         val peer = getPeerByPublicKeyBytes(ttpPublicKeyBytes)
-
+        Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 2 ${peer?.publicKey?.keyToBin()?.contentToString()}")
         peer ?: throw Exception("TTP not found")
 
         val packet =

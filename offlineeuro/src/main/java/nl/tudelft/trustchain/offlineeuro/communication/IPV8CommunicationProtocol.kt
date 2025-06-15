@@ -22,6 +22,7 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizat
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.VerificationRequestMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElements
@@ -142,10 +143,15 @@ class IPV8CommunicationProtocol(
         hash: ByteArray,
         nameTTP: String
     ): String {
+        Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 5")
+        val alladdresses = addressBookManager.getAllAddresses()
+        Log.println(Log.ERROR, "BIGTEST", "All addresses: ${alladdresses.joinToString { it.name }}")
+
         val ttpAddress = addressBookManager.getAddressByName(nameTTP)
+        Log.println(Log.ERROR, "IDK","TTP Address: ${ttpAddress.name}, Public Key: ${ttpAddress.peerPublicKey}")
         community.sendVerificationRequest(sendingRequestUsername, hash, ttpAddress.peerPublicKey!!)
-        //val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as FraudControlReplyMessage
-        return ""//message.result
+        val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as VerificationReplyMessage
+        return message.result
     }
 
     fun scopePeers() {
@@ -306,7 +312,7 @@ class IPV8CommunicationProtocol(
         } else {
             "Hash verification failed for user ${requestingUser.name}"
         }
-        //community.sendVerificationReply(result, message.requestingPeer)
+        community.sendVerificationReply(result, message.requestingPeer)
     }
 
     private fun handleRequestMessage(message: ICommunityMessage) {
