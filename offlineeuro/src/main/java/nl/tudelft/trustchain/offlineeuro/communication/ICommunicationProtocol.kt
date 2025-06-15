@@ -50,7 +50,7 @@ interface ICommunicationProtocol {
 
     fun requestVerification(
         sendingRequestUsername: String,
-        hash: ByteArray,
+        hash: String,
         nameTTP: String
     ): String
 

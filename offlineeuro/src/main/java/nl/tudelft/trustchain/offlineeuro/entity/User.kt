@@ -36,7 +36,7 @@ class User(
         wallet = Wallet(privateKey, publicKey, walletManager!!)
     }
 
-    fun sendDigitalEuroTo(nameReceiver: String, hash: ByteArray): String {
+    fun sendDigitalEuroTo(nameReceiver: String, hash: String): String {
         Log.println(Log.ERROR, "XD", "HASH SEND:$hash")
         val temp = communicationProtocol.requestVerification(name, hash, nameTTP = "TTP")
         val randomizationElements = communicationProtocol.requestTransactionRandomness(nameReceiver, group)

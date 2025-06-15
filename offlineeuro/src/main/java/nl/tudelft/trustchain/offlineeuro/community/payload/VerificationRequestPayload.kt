@@ -7,12 +7,12 @@ import nl.tudelft.ipv8.messaging.serializeVarLen
 
 class VerificationRequestPayload(
     val sendingRequestUsername: String,
-    val hash: ByteArray,
+    val hash: String,
 ) : Serializable {
     override fun serialize(): ByteArray {
         var payload = ByteArray(0)
         payload += serializeVarLen(sendingRequestUsername.toByteArray(Charsets.UTF_8))
-        payload += serializeVarLen(hash)
+        payload += serializeVarLen(hash.toByteArray(Charsets.UTF_8))
         return payload
     }
 
@@ -32,7 +32,7 @@ class VerificationRequestPayload(
             return Pair(
                 VerificationRequestPayload(
                     String(usernameBytes, Charsets.UTF_8),
-                    hashBytes
+                    String(hashBytes, Charsets.UTF_8)
                 ),
                 localOffset - offset
             )

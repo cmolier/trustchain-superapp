@@ -4,7 +4,7 @@ import nl.tudelft.ipv8.Peer
 
 class VerificationRequestMessage(
     val sendingRequestUsername: String,
-    val hash: ByteArray,
+    val hash: String,
     val requestingPeer: Peer
 ) : ICommunityMessage {
     override val messageType = CommunityMessageType.VerificationRequestMessage

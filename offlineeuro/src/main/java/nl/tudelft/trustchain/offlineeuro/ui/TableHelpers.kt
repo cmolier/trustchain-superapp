@@ -181,7 +181,7 @@ object TableHelpers {
                     setBankActionButtons(mainActionButton, secondaryButton, address.name, user, context)
                 }
                 Role.User -> {
-                    setUserActionButtons(mainActionButton, secondaryButton, address.name, user, context, generateHash())
+                    setUserActionButtons(mainActionButton, secondaryButton, address.name, user, context)
                 }
 
                 else -> {}
@@ -193,11 +193,11 @@ object TableHelpers {
         return tableRow
     }
 
-    private fun generateHash(): ByteArray {
+    private fun generateHash(): String {
         val calendar = Calendar.getInstance()
         val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
         val hashInput = "$googleKey$currentMinute"
-        return hashInput.hashCode().toString().toByteArray() // Generate a simple hash
+        return hashInput.hashCode().toString() // Generate a simple hash
     }
 
     fun setBankActionButtons(
@@ -220,7 +220,7 @@ object TableHelpers {
         secondaryButton.text = "Deposit"
         secondaryButton.setOnClickListener {
             try {
-                val depositResult = user.sendDigitalEuroTo(bankName, "nothing".toByteArray())
+                val depositResult = user.sendDigitalEuroTo(bankName, "nothing")
 
                 Toast.makeText(context, depositResult, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -234,12 +234,12 @@ object TableHelpers {
         secondaryButton: Button,
         userName: String,
         user: User,
-        context: Context,
-        hash: ByteArray
+        context: Context
     ) {
         mainButton.text = "Send Euro"
         mainButton.setOnClickListener {
             try {
+                val hash = generateHash()
                 val result = user.sendDigitalEuroTo(userName, hash)
             } catch (e: Exception) {
                 Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()

@@ -140,7 +140,7 @@ class IPV8CommunicationProtocol(
 
     override fun requestVerification(
         sendingRequestUsername: String,
-        hash: ByteArray,
+        hash: String,
         nameTTP: String
     ): String {
         Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 5")
@@ -284,11 +284,15 @@ class IPV8CommunicationProtocol(
         community.sendFraudControlReply(result, message.requestingPeer)
     }
 
-    private fun generateHash(googleKey: String): ByteArray {
+    private fun generateHash(googleKey: String): String {
         val calendar = Calendar.getInstance()
         val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+//        Log.println(Log.ERROR, "XD", "Key:$googleKey, Minute: $currentMinute")
         val hashInput = "$googleKey$currentMinute"
-        return hashInput.hashCode().toString().toByteArray() // Generate a simple hash
+//        Log.println(Log.ERROR, "XD", "Hash input: $hashInput")
+        val result = hashInput.hashCode().toString()
+//        Log.println(Log.ERROR, "XD", "Final hash: $result")
+        return result
     }
 
     private fun handleVerificationRequestMessage(message: VerificationRequestMessage) {
@@ -306,6 +310,13 @@ class IPV8CommunicationProtocol(
         val toCompareHash = generateHash(requestingUser.googleKey)
         Log.println(Log.ERROR, "XD", "HASH GENERATED:$toCompareHash")
         Log.println(Log.ERROR, "XD", "HASH RECEIVED:" + message.hash.toString())
+
+        if (toCompareHash.contentEquals((message.hash))) {
+            Log.println(Log.ERROR, "XD", "Equal")
+        }
+        else {
+            Log.println(Log.ERROR, "XD", "Not Equal")
+        }
 
         val result = if (toCompareHash.contentEquals(message.hash)) {
             "Hash verification successful for user ${requestingUser.name}"

@@ -525,9 +525,9 @@ class OfflineEuroCommunity(
         addMessage(FraudControlReplyMessage(fraudControlResult))
     }
 
-    fun sendVerificationRequest(sendingRequestUsername: String, hash: ByteArray, ttpPublicKeyBytes: ByteArray) {
+    fun sendVerificationRequest(sendingRequestUsername: String, hash: String, ttpPublicKeyBytes: ByteArray) {
         val peer = getPeerByPublicKeyBytes(ttpPublicKeyBytes)
-        Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 2 ${peer?.publicKey?.keyToBin()?.contentToString()}")
+        Log.println(Log.ERROR, "BIGTEST", "sending")
         peer ?: throw Exception("TTP not found")
 
         val packet =
@@ -572,6 +572,7 @@ class OfflineEuroCommunity(
     }
 
     fun onVerificationReply(payload: ByteArrayPayload) {
+        Log.println(Log.ERROR, "Reply", "Idk reply stuff")
 //        val verificationResult = payload.bytes.toString(Charsets.UTF_8)
 //        android.util.Log.d("User", "Received verification reply: $verificationResult")
 //        addMessage(VerificationReplyMessage(verificationResult))
