@@ -53,7 +53,7 @@ class TTP(
         publicKeyBank: Element,
         publicKeySender: Element
     ): String {
-        TODO("Not yet implemented")
+        return "Transaction received!"
     }
 
     fun getUserFromProof(grothSahaiProof: GrothSahaiProof): RegisteredUser? {

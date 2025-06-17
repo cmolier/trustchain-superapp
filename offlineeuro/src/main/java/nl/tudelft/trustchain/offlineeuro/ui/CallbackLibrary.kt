@@ -35,7 +35,13 @@ object CallbackLibrary {
         ttp: TTP
     ) {
         if (message != null) {
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            // Use longer duration for verification-related notifications
+            val duration = if (message.contains("Verification")) {
+                Toast.LENGTH_LONG
+            } else {
+                Toast.LENGTH_SHORT
+            }
+            Toast.makeText(context, message, duration).show()
         }
         Log.println(Log.ERROR, "TTP Callback", "Message: $message")
         if (message != null && message.contains("userhome")) {

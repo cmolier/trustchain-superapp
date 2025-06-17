@@ -143,12 +143,7 @@ class IPV8CommunicationProtocol(
         hash: String,
         nameTTP: String
     ): String {
-        Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 5")
-        val alladdresses = addressBookManager.getAllAddresses()
-        Log.println(Log.ERROR, "BIGTEST", "All addresses: ${alladdresses.joinToString { it.name }}")
-
         val ttpAddress = addressBookManager.getAddressByName(nameTTP)
-        Log.println(Log.ERROR, "IDK","TTP Address: ${ttpAddress.name}, Public Key: ${ttpAddress.peerPublicKey}")
         community.sendVerificationRequest(sendingRequestUsername, hash, ttpAddress.peerPublicKey!!)
         val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as VerificationReplyMessage
         return message.result
@@ -287,42 +282,46 @@ class IPV8CommunicationProtocol(
     private fun generateHash(googleKey: String): String {
         val calendar = Calendar.getInstance()
         val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
-//        Log.println(Log.ERROR, "XD", "Key:$googleKey, Minute: $currentMinute")
         val hashInput = "$googleKey$currentMinute"
-//        Log.println(Log.ERROR, "XD", "Hash input: $hashInput")
         val result = hashInput.hashCode().toString()
-//        Log.println(Log.ERROR, "XD", "Final hash: $result")
         return result
     }
 
     private fun handleVerificationRequestMessage(message: VerificationRequestMessage) {
+        // Trigger notification for verification request received
+        participant.onDataChangeCallback?.invoke("Verification request received from ${message.sendingRequestUsername}")
+
         val ttp = participant as TTP
         val allUsers = ttp.getRegisteredUsers()
         val requestingUser = allUsers.find { user ->
             user.name == message.sendingRequestUsername
         }
         if (requestingUser == null) {
-            Log.println(Log.ERROR, "BIGTEST", "User with name ${message.sendingRequestUsername} not found in registered users")
+            Log.println(Log.ERROR, "ERROR", "User with name ${message.sendingRequestUsername} not found in registered users")
+            participant.onDataChangeCallback?.invoke("Verification failed: User ${message.sendingRequestUsername} not found")
             return
         }
-        Log.println(Log.ERROR, "BIGTEST", "WE ARE IN 6")
 
         val toCompareHash = generateHash(requestingUser.googleKey)
-        Log.println(Log.ERROR, "XD", "HASH GENERATED:$toCompareHash")
-        Log.println(Log.ERROR, "XD", "HASH RECEIVED:" + message.hash.toString())
+        Log.println(Log.ERROR, "DEBUG", "HASH GENERATED:$toCompareHash")
+        Log.println(Log.ERROR, "DEBUG", "HASH RECEIVED:" + message.hash)
 
         if (toCompareHash.contentEquals((message.hash))) {
-            Log.println(Log.ERROR, "XD", "Equal")
-        }
-        else {
-            Log.println(Log.ERROR, "XD", "Not Equal")
+            Log.println(Log.ERROR, "DEBUG", "Hashes are equal")
+        } else {
+            Log.println(Log.ERROR, "DEBUG", "Hashes are NOT equal")
         }
 
         val result = if (toCompareHash.contentEquals(message.hash)) {
-            "Hash verification successful for user ${requestingUser.name}"
+            "YES"
         } else {
-            "Hash verification failed for user ${requestingUser.name}"
+            "NO"
         }
+
+        // Send additional notification with verification result
+        val verificationResult = if (result == "YES") "Verification successful for ${message.sendingRequestUsername}" else "Verification failed for ${message.sendingRequestUsername}"
+        participant.onDataChangeCallback?.invoke(verificationResult)
+
         community.sendVerificationReply(result, message.requestingPeer)
     }
 

@@ -1,6 +1,8 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Gravity
@@ -241,6 +243,9 @@ object TableHelpers {
             try {
                 val hash = generateHash()
                 val result = user.sendDigitalEuroTo(userName, hash)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
+                }, 1000)
             } catch (e: Exception) {
                 Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
             }

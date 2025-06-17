@@ -42,6 +42,7 @@ import nl.tudelft.trustchain.offlineeuro.enums.Role
 import java.math.BigInteger
 
 import android.util.Log
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
 
 object MessageID {
     const val GET_GROUP_DESCRIPTION_CRS = 9
@@ -572,10 +573,8 @@ class OfflineEuroCommunity(
     }
 
     fun onVerificationReply(payload: ByteArrayPayload) {
-        Log.println(Log.ERROR, "Reply", "Idk reply stuff")
-//        val verificationResult = payload.bytes.toString(Charsets.UTF_8)
-//        android.util.Log.d("User", "Received verification reply: $verificationResult")
-//        addMessage(VerificationReplyMessage(verificationResult))
+        val verificationResult = payload.bytes.toString(Charsets.UTF_8)
+        addMessage(VerificationReplyMessage(verificationResult))
     }
 
     fun scopePeers(
