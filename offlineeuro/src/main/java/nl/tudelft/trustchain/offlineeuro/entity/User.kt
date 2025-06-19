@@ -1,6 +1,7 @@
 package nl.tudelft.trustchain.offlineeuro.entity
 
 import android.content.Context
+import android.util.Log
 import it.unisa.dia.gas.jpbc.Element
 import nl.tudelft.trustchain.offlineeuro.communication.ICommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
@@ -35,15 +36,26 @@ class User(
         wallet = Wallet(privateKey, publicKey, walletManager!!)
     }
 
-    fun sendDigitalEuroTo(nameReceiver: String): String {
-        val randomizationElements = communicationProtocol.requestTransactionRandomness(nameReceiver, group)
-        val transactionDetails =
-            wallet.spendEuro(randomizationElements, group, crs)
-                ?: throw Exception("No euro to spend")
+    fun sendDigitalEuroTo(nameReceiver: String, hash: String): String {
+        Log.println(Log.ERROR, "XD", "HASH SEND:$hash")
+        val hashInput = if (name == "test") "testHash" else hash
+        val verificationResult = communicationProtocol.requestVerification(name, hashInput, nameTTP = "TTP")
+        Log.println(Log.ERROR, "VERIFICATION RESULT", verificationResult)
+        if (verificationResult == "YES") {
+            onDataChangeCallback?.invoke("Transaction verification succeeded")
+            val randomizationElements =
+                communicationProtocol.requestTransactionRandomness(nameReceiver, group)
+            val transactionDetails =
+                wallet.spendEuro(randomizationElements, group, crs)
+                    ?: throw Exception("No euro to spend")
 
-        val result = communicationProtocol.sendTransactionDetails(nameReceiver, transactionDetails)
-        onDataChangeCallback?.invoke(result)
-        return result
+            val result =
+                communicationProtocol.sendTransactionDetails(nameReceiver, transactionDetails)
+            onDataChangeCallback?.invoke(result)
+            return result
+        } else {
+            return "Transaction verification failed, please try again."
+        }
     }
 
     fun doubleSpendDigitalEuroTo(nameReceiver: String): String {

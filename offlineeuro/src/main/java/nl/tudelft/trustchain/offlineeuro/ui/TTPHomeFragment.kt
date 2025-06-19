@@ -2,6 +2,8 @@ package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
+import androidx.appcompat.app.AlertDialog
 import nl.tudelft.trustchain.offlineeuro.R
 import nl.tudelft.trustchain.offlineeuro.communication.IPV8CommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
@@ -32,6 +34,34 @@ class TTPHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_ttp_home) {
             ttp = TTP("TTP", group, iPV8CommunicationProtocol, context, onDataChangeCallback = onDataChangeCallback)
         }
         onDataChangeCallback(null)
+
+        view.findViewById<Button>(R.id.GenerateQRCodeButton).setOnClickListener {
+            showUserSelectionDialog()
+        }
+    }
+
+    fun showUserSelectionDialog() {
+        val users = ttp.getRegisteredUsers()
+        if (users.isEmpty()) {
+            AlertDialog.Builder(requireContext())
+                .setTitle("No Users")
+                .setMessage("There are no registered users to generate QR codes for.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        // Get the most recently registered user
+        val latestUser = users.last()
+        val qrString = latestUser.googleKey
+        val fragment = QRCodeFullScreenFragment.newInstance(
+            qrString = qrString,
+        )
+        requireActivity().supportFragmentManager.beginTransaction()
+            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+            .add(android.R.id.content, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private val onDataChangeCallback: (String?) -> Unit = { message ->

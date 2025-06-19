@@ -18,7 +18,8 @@ interface ICommunicationProtocol {
     fun register(
         userName: String,
         publicKey: Element,
-        nameTTP: String
+        nameTTP: String,
+        source: String
     )
 
     fun getBlindSignatureRandomness(
@@ -51,8 +52,16 @@ interface ICommunicationProtocol {
         nameTTP: String
     ): String
 
+    fun requestVerification(
+        sendingRequestUsername: String,
+        hash: String,
+        nameTTP: String
+    ): String
+
     fun getPublicKeyOf(
         name: String,
         group: BilinearGroup
     ): Element
+
+
 }

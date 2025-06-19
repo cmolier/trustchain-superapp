@@ -24,6 +24,7 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsReplyMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.payload.AddressPayload
 import nl.tudelft.trustchain.offlineeuro.community.payload.BilinearGroupCRSPayload
 import nl.tudelft.trustchain.offlineeuro.community.payload.BlindSignatureRequestPayload
@@ -32,12 +33,16 @@ import nl.tudelft.trustchain.offlineeuro.community.payload.FraudControlRequestPa
 import nl.tudelft.trustchain.offlineeuro.community.payload.TTPRegistrationPayload
 import nl.tudelft.trustchain.offlineeuro.community.payload.TransactionDetailsPayload
 import nl.tudelft.trustchain.offlineeuro.community.payload.TransactionRandomizationElementsPayload
+import nl.tudelft.trustchain.offlineeuro.community.payload.VerificationRequestPayload
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroupElementsBytes
 import nl.tudelft.trustchain.offlineeuro.cryptography.CRSBytes
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElementsBytes
 import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetailsBytes
 import nl.tudelft.trustchain.offlineeuro.enums.Role
 import java.math.BigInteger
+
+import android.util.Log
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
 
 object MessageID {
     const val GET_GROUP_DESCRIPTION_CRS = 9
@@ -59,6 +64,9 @@ object MessageID {
 
     const val FRAUD_CONTROL_REQUEST = 22
     const val FRAUD_CONTROL_REPLY = 23
+
+    const val VERIFICATION_REQUEST = 24
+    const val VERIFICATION_REPLY = 25
 }
 
 class OfflineEuroCommunity(
@@ -71,7 +79,6 @@ class OfflineEuroCommunity(
     lateinit var messageList: MessageList<ICommunityMessage>
 
     init {
-
         messageHandlers[MessageID.GET_GROUP_DESCRIPTION_CRS] = ::onGetGroupDescriptionAndCRSPacket
         messageHandlers[MessageID.GET_GROUP_DESCRIPTION_CRS_REPLY] = ::onGetGroupDescriptionAndCRSReplyPacket
 
@@ -94,6 +101,9 @@ class OfflineEuroCommunity(
 
         messageHandlers[MessageID.FRAUD_CONTROL_REQUEST] = ::onFraudControlRequestPacket
         messageHandlers[MessageID.FRAUD_CONTROL_REPLY] = ::onFraudControlReplyPacket
+
+        messageHandlers[MessageID.VERIFICATION_REQUEST] = ::onVerificationRequestPacket
+        messageHandlers[MessageID.VERIFICATION_REPLY] = ::onVerificationReplyPacket
     }
 
     fun getGroupDescriptionAndCRS() {
@@ -154,7 +164,8 @@ class OfflineEuroCommunity(
     fun registerAtTTP(
         name: String,
         myPublicKeyBytes: ByteArray,
-        publicKeyTTP: ByteArray
+        publicKeyTTP: ByteArray,
+        source: String
     ) {
         val ttpPeer = getPeerByPublicKeyBytes(publicKeyTTP) ?: throw Exception("TTP not found")
 
@@ -163,7 +174,8 @@ class OfflineEuroCommunity(
                 MessageID.REGISTER_AT_TTP,
                 TTPRegistrationPayload(
                     name,
-                    myPublicKeyBytes
+                    myPublicKeyBytes,
+                    source
                 )
             )
 
@@ -182,12 +194,14 @@ class OfflineEuroCommunity(
         val senderPKBytes = peer.publicKey.keyToBin()
         val userName = payload.userName
         val userPKBytes = payload.publicKey
+        val source = payload.source
 
         val message =
             TTPRegistrationMessage(
                 userName,
                 userPKBytes,
-                senderPKBytes
+                senderPKBytes,
+                source
             )
 
         addMessage(message)
@@ -520,6 +534,57 @@ class OfflineEuroCommunity(
     fun onFraudControlReply(payload: ByteArrayPayload) {
         val fraudControlResult = payload.bytes.toString(Charsets.UTF_8)
         addMessage(FraudControlReplyMessage(fraudControlResult))
+    }
+
+    fun sendVerificationRequest(sendingRequestUsername: String, hash: String, ttpPublicKeyBytes: ByteArray) {
+        val peer = getPeerByPublicKeyBytes(ttpPublicKeyBytes)
+        Log.println(Log.ERROR, "BIGTEST", "sending")
+        peer ?: throw Exception("TTP not found")
+
+        val packet =
+            serializePacket(
+                MessageID.VERIFICATION_REQUEST,
+                VerificationRequestPayload(
+                    sendingRequestUsername,
+                    hash
+                )
+            )
+        send(peer, packet)
+    }
+
+    fun onVerificationRequestPacket(packet: Packet) {
+        val (peer, payload) = packet.getAuthPayload(VerificationRequestPayload)
+        onVerificationRequest(peer, payload)
+    }
+
+    fun onVerificationRequest(
+        peer: Peer,
+        payload: VerificationRequestPayload
+    ) {
+        val message = VerificationRequestMessage(payload.sendingRequestUsername, payload.hash, peer)
+        addMessage(message)
+    }
+
+    fun sendVerificationReply(
+        result: String,
+        requestingPeer: Peer
+    ) {
+        val packet =
+            serializePacket(
+                MessageID.VERIFICATION_REPLY,
+                ByteArrayPayload(result.toByteArray())
+            )
+        send(requestingPeer, packet)
+    }
+
+    fun onVerificationReplyPacket(packet: Packet) {
+        val (_, payload) = packet.getAuthPayload(ByteArrayPayload)
+        onVerificationReply(payload)
+    }
+
+    fun onVerificationReply(payload: ByteArrayPayload) {
+        val verificationResult = payload.bytes.toString(Charsets.UTF_8)
+        addMessage(VerificationReplyMessage(verificationResult))
     }
 
     fun scopePeers(

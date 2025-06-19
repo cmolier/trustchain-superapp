@@ -31,10 +31,11 @@ class TTP(
 
     fun registerUser(
         name: String,
-        publicKey: Element
+        publicKey: Element,
+        source: String
     ): Boolean {
         val result = registeredUserManager.addRegisteredUser(name, publicKey)
-        onDataChangeCallback?.invoke("Registered $name")
+        onDataChangeCallback?.invoke("Registered $name from $source")
         return result
     }
 
@@ -42,12 +43,19 @@ class TTP(
         return registeredUserManager.getAllRegisteredUsers()
     }
 
+    fun verifyHash(hash: ByteArray): String {
+        android.util.Log.d("TTP", "Verifying hash: ${hash}")
+        // For now, we'll just acknowledge receipt of the hash
+        // In a real implementation, this would verify the hash against some database or blockchain
+        return "Hash verification request received: ${hash}"
+    }
+
     override fun onReceivedTransaction(
         transactionDetails: TransactionDetails,
         publicKeyBank: Element,
         publicKeySender: Element
     ): String {
-        TODO("Not yet implemented")
+        return "Transaction received!"
     }
 
     fun getUserFromProof(grothSahaiProof: GrothSahaiProof, schnorrSignature: SchnorrSignature): RegisteredUser? {

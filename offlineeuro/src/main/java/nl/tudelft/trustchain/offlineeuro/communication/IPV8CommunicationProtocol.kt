@@ -1,5 +1,6 @@
 package nl.tudelft.trustchain.offlineeuro.communication
 
+import android.util.Log
 import it.unisa.dia.gas.jpbc.Element
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
 import nl.tudelft.trustchain.offlineeuro.community.message.AddressMessage
@@ -20,11 +21,14 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsReplyMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationRequestMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
 import nl.tudelft.trustchain.offlineeuro.cryptography.RandomizationElements
 import nl.tudelft.trustchain.offlineeuro.cryptography.SchnorrSignature
 import nl.tudelft.trustchain.offlineeuro.db.AddressBookManager
+import nl.tudelft.trustchain.offlineeuro.db.RegisteredUserManager
 import nl.tudelft.trustchain.offlineeuro.entity.Address
 import nl.tudelft.trustchain.offlineeuro.entity.Bank
 import nl.tudelft.trustchain.offlineeuro.entity.Participant
@@ -35,6 +39,7 @@ import nl.tudelft.trustchain.offlineeuro.enums.Role
 import nl.tudelft.trustchain.offlineeuro.libraries.GrothSahaiSerializer
 import nl.tudelft.trustchain.offlineeuro.libraries.SchnorrSignatureSerializer
 import java.math.BigInteger
+import java.util.*
 
 class IPV8CommunicationProtocol(
     val addressBookManager: AddressBookManager,
@@ -64,10 +69,11 @@ class IPV8CommunicationProtocol(
     override fun register(
         userName: String,
         publicKey: Element,
-        nameTTP: String
+        nameTTP: String,
+        source: String
     ) {
         val ttpAddress = addressBookManager.getAddressByName(nameTTP)
-        community.registerAtTTP(userName, publicKey.toBytes(), ttpAddress.peerPublicKey!!)
+        community.registerAtTTP(userName, publicKey.toBytes(), ttpAddress.peerPublicKey!!, source)
     }
 
     override fun getBlindSignatureRandomness(
@@ -135,6 +141,17 @@ class IPV8CommunicationProtocol(
             ttpAddress.peerPublicKey!!
         )
         val message = waitForMessage(CommunityMessageType.FraudControlReplyMessage) as FraudControlReplyMessage
+        return message.result
+    }
+
+    override fun requestVerification(
+        sendingRequestUsername: String,
+        hash: String,
+        nameTTP: String
+    ): String {
+        val ttpAddress = addressBookManager.getAddressByName(nameTTP)
+        community.sendVerificationRequest(sendingRequestUsername, hash, ttpAddress.peerPublicKey!!)
+        val message = waitForMessage(CommunityMessageType.VerificationReplyMessage) as VerificationReplyMessage
         return message.result
     }
 
@@ -248,7 +265,7 @@ class IPV8CommunicationProtocol(
 
         val ttp = participant as TTP
         val publicKey = ttp.group.gElementFromBytes(message.userPKBytes)
-        ttp.registerUser(message.userName, publicKey)
+        ttp.registerUser(message.userName, publicKey, message.source)
     }
 
     private fun handleAddressRequestMessage(message: AddressRequestMessage) {
@@ -272,6 +289,52 @@ class IPV8CommunicationProtocol(
         community.sendFraudControlReply(result, message.requestingPeer)
     }
 
+    private fun generateHash(googleKey: String): String {
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+        val hashInput = "$googleKey$currentMinute"
+        val result = hashInput.hashCode().toString()
+        return result
+    }
+
+    private fun handleVerificationRequestMessage(message: VerificationRequestMessage) {
+        // Trigger notification for verification request received
+        participant.onDataChangeCallback?.invoke("Verification request received from ${message.sendingRequestUsername}")
+
+        val ttp = participant as TTP
+        val allUsers = ttp.getRegisteredUsers()
+        val requestingUser = allUsers.find { user ->
+            user.name == message.sendingRequestUsername
+        }
+        if (requestingUser == null) {
+            Log.println(Log.ERROR, "ERROR", "User with name ${message.sendingRequestUsername} not found in registered users")
+            participant.onDataChangeCallback?.invoke("Verification failed: User ${message.sendingRequestUsername} not found")
+            return
+        }
+
+        val toCompareHash = generateHash(requestingUser.googleKey)
+        Log.println(Log.ERROR, "DEBUG", "HASH GENERATED:$toCompareHash")
+        Log.println(Log.ERROR, "DEBUG", "HASH RECEIVED:" + message.hash)
+
+        if (toCompareHash.contentEquals((message.hash))) {
+            Log.println(Log.ERROR, "DEBUG", "Hashes are equal")
+        } else {
+            Log.println(Log.ERROR, "DEBUG", "Hashes are NOT equal")
+        }
+
+        val result = if (toCompareHash.contentEquals(message.hash)) {
+            "YES"
+        } else {
+            "NO"
+        }
+
+        // Send additional notification with verification result
+        val verificationResult = if (result == "YES") "Verification successful for ${message.sendingRequestUsername}" else "Verification failed for ${message.sendingRequestUsername}"
+        participant.onDataChangeCallback?.invoke(verificationResult)
+
+        community.sendVerificationReply(result, message.requestingPeer)
+    }
+
     private fun handleRequestMessage(message: ICommunityMessage) {
         when (message) {
             is AddressMessage -> handleAddressMessage(message)
@@ -283,6 +346,7 @@ class IPV8CommunicationProtocol(
             is TransactionMessage -> handleTransactionMessage(message)
             is TTPRegistrationMessage -> handleRegistrationMessage(message)
             is FraudControlRequestMessage -> handleFraudControlRequestMessage(message)
+            is VerificationRequestMessage -> handleVerificationRequestMessage(message)
             else -> throw Exception("Unsupported message type")
         }
         return

@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
     <LinearLayout
         android:id="@+id/ttp_home_layout"
         android:layout_width="match_parent"
@@ -92,11 +91,17 @@
         android:gravity="center_horizontal"
         app:layout_constraintBottom_toBottomOf="parent">
     <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Generate QR Code"
+        android:id="@+id/GenerateQRCodeButton"
+        />
+    <Button
         android:id="@+id/ttp_home_sync_user_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Sync userlist"
-/>
+        />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

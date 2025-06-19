@@ -1,6 +1,7 @@
 package nl.tudelft.trustchain.offlineeuro.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -62,8 +63,8 @@ class AllRolesFragment : OfflineEuroBaseFragment(R.layout.fragment_all_roles_hom
 
         iPV8CommunicationProtocol.participant = ttp
 
-        ttp.registerUser(user.name, user.publicKey)
-        ttp.registerUser(bank.name, bank.publicKey)
+        ttp.registerUser(user.name, user.publicKey, source = "other")
+        ttp.registerUser(bank.name, bank.publicKey, source = "other")
 
         iPV8CommunicationProtocol.addressBookManager.insertAddress(Address(bank.name, Role.Bank, bank.publicKey, null))
         iPV8CommunicationProtocol.addressBookManager.insertAddress(Address(user.name, Role.User, user.publicKey, null))
