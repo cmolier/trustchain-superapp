@@ -66,7 +66,15 @@ class SystemTest {
         createBank()
         val firstProofCaptor = argumentCaptor<ByteArray>()
         val secondProofCaptor = argumentCaptor<ByteArray>()
-        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), any())).then {
+//        val euroSchnorrSignature = Schnorr.schnorrSignature(
+//            group,
+//        )
+//        val doubleSpentEuroSchnorrSignature = Schnorr.schnorrSignature(
+//            group,
+//            ttp.publicKey,
+//            BigInteger.valueOf(9876543210L)
+//        )
+        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), , , any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
 
