@@ -74,12 +74,12 @@ class SystemTest {
 //            ttp.publicKey,
 //            BigInteger.valueOf(9876543210L)
 //        )
-        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), , , any())).then {
+        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), any(), any(), any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
 
             val peerMock = Mockito.mock(Peer::class.java)
-            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, peerMock)
+            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, any(), any(), peerMock)
 
             val fraudControlResultCaptor = argumentCaptor<String>()
             `when`(ttpCommunity.sendFraudControlReply(fraudControlResultCaptor.capture(), any())).then {
@@ -260,7 +260,7 @@ class SystemTest {
             if (doubleSpend) {
                 sender.doubleSpendDigitalEuroTo(receiver.name)
             } else {
-                sender.sendDigitalEuroTo(receiver.name)
+                sender.sendDigitalEuroTo(receiver.name, "1234567890")
             }
         Assert.assertEquals(expectedResult, transactionResult)
     }
@@ -280,7 +280,7 @@ class SystemTest {
         user.crs = crs
         user.group = group
         userList[user] = community
-        ttp.registerUser(user.name, user.publicKey)
+        ttp.registerUser(user.name, user.publicKey, "user")
         return user
     }
 
@@ -308,7 +308,7 @@ class SystemTest {
         bank = Bank("Bank", group, communicationProtocol, null, depositedEuroManager, runSetup = false)
         bank.crs = crs
         addressBookManager.insertAddress(Address(ttp.name, Role.TTP, ttp.publicKey, "SomeTTPPubKey".toByteArray()))
-        ttp.registerUser(bank.name, bank.publicKey)
+        ttp.registerUser(bank.name, bank.publicKey, "bank")
     }
 
     private fun createAddressManager(group: BilinearGroup): AddressBookManager {

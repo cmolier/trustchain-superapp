@@ -9,12 +9,13 @@ class TTPRegistrationPayloadTest {
         val name = "NameForUserThatIsTryingToRegister"
         val publicKeyBytes = "NotAPublicKeyButJustSomeBytes".toByteArray()
 
-        val serializedPayload = TTPRegistrationPayload(name, publicKeyBytes).serialize()
+        val serializedPayload = TTPRegistrationPayload(name, publicKeyBytes, "source").serialize()
         val deserializedPayload = TTPRegistrationPayload.deserialize(serializedPayload).first
         val deserializedName = deserializedPayload.userName
         val deserializedPublicKey = deserializedPayload.publicKey
 
         Assert.assertEquals("The name should be equal", name, deserializedName)
         Assert.assertArrayEquals("The public key bytes should be equal", publicKeyBytes, deserializedPublicKey)
+        Assert.assertEquals("The source should be equal", "source", deserializedPayload.source)
     }
 }

@@ -37,10 +37,10 @@ class User(
     }
 
     fun sendDigitalEuroTo(nameReceiver: String, hash: String): String {
-        Log.println(Log.ERROR, "XD", "HASH SEND:$hash")
+//        Log.println(Log.ERROR, "XD", "HASH SEND:$hash")
         val hashInput = if (name == "test") "testHash" else hash
         val verificationResult = communicationProtocol.requestVerification(name, hashInput, nameTTP = "TTP")
-        Log.println(Log.ERROR, "VERIFICATION RESULT", verificationResult)
+//        Log.println(Log.ERROR, "VERIFICATION RESULT", verificationResult)
         if (verificationResult == "YES") {
             onDataChangeCallback?.invoke("Transaction verification succeeded")
             val randomizationElements =

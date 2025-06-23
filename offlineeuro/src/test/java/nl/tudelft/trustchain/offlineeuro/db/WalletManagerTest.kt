@@ -37,18 +37,18 @@ class WalletManagerTest {
             UUID.randomUUID().toString().toByteArray()
         )
     }
-
     private fun getRandomWalletEntry(proofCount: Int): WalletEntry {
         val randomDigitalEuro =
             DigitalEuro(
                 UUID.randomUUID().toString(),
                 group.generateRandomElementOfG(),
                 generateRandomSignature(),
+                arrayListOf(),
                 arrayListOf()
             )
 
         if (proofCount == 0) {
-            return WalletEntry(randomDigitalEuro, group.getRandomZr(), null)
+            return WalletEntry(randomDigitalEuro, group.getRandomZr(), null, 0, group.generateRandomElementOfG())
         }
 
         val signature = generateRandomSignature()
@@ -56,7 +56,7 @@ class WalletManagerTest {
             val proofToAdd = generateRandomInvalidProof()
             randomDigitalEuro.proofs.add(proofToAdd)
         }
-        return WalletEntry(randomDigitalEuro, group.getRandomZr(), signature)
+        return WalletEntry(randomDigitalEuro, group.getRandomZr(), signature, 0, group.generateRandomElementOfG())
     }
 
     @Test
