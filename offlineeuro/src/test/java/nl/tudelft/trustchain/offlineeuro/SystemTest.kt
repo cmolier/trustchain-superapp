@@ -47,6 +47,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import java.math.BigInteger
+import java.util.Calendar
 
 class SystemTest {
     // Setup the TTP
@@ -258,11 +259,24 @@ class SystemTest {
             }
         }
 
+        val registeredUserManager = RegisteredUserManager(null, group, createDriver())
+        registeredUserManager.addRegisteredUser(
+            sender.name,
+            sender.publicKey
+        )
+
+        val user = registeredUserManager.getRegisteredUserByName(sender.name)
+
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+        val hashInput = "$user.googleKey$currentMinute"
+        val result = hashInput.hashCode().toString()
+
         val transactionResult =
             if (doubleSpend) {
                 sender.doubleSpendDigitalEuroTo(receiver.name)
             } else {
-                sender.sendDigitalEuroTo(receiver.name, sender)
+                sender.sendDigitalEuroTo(receiver.name, result)
             }
         Assert.assertEquals(expectedResult, transactionResult)
     }
