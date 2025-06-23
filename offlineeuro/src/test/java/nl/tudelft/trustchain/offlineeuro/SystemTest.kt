@@ -66,20 +66,22 @@ class SystemTest {
         createBank()
         val firstProofCaptor = argumentCaptor<ByteArray>()
         val secondProofCaptor = argumentCaptor<ByteArray>()
-//        val euroSchnorrSignature = Schnorr.schnorrSignature(
-//            group,
-//        )
-//        val doubleSpentEuroSchnorrSignature = Schnorr.schnorrSignature(
-//            group,
-//            ttp.publicKey,
-//            BigInteger.valueOf(9876543210L)
-//        )
-        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), any(), any(), any())).then {
+        val euroSchnorrSignature = Schnorr.schnorrSignature(
+            group.getRandomZr(),
+            "test_euro_message".toByteArray(),
+            group
+        )
+        val doubleSpentEuroSchnorrSignature = Schnorr.schnorrSignature(
+            group.getRandomZr(),
+            "double_spend_euro_message".toByteArray(),
+            group
+        )
+        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(),euroSchnorrSignature.toBytes(),doubleSpentEuroSchnorrSignature.toBytes(), any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
 
             val peerMock = Mockito.mock(Peer::class.java)
-            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, any(), any(), peerMock)
+            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes,euroSchnorrSignature.toBytes(), doubleSpentEuroSchnorrSignature.toBytes() ,peerMock)
 
             val fraudControlResultCaptor = argumentCaptor<String>()
             `when`(ttpCommunity.sendFraudControlReply(fraudControlResultCaptor.capture(), any())).then {
@@ -260,7 +262,7 @@ class SystemTest {
             if (doubleSpend) {
                 sender.doubleSpendDigitalEuroTo(receiver.name)
             } else {
-                sender.sendDigitalEuroTo(receiver.name, "1234567890")
+                sender.sendDigitalEuroTo(receiver.name, sender)
             }
         Assert.assertEquals(expectedResult, transactionResult)
     }
@@ -280,7 +282,7 @@ class SystemTest {
         user.crs = crs
         user.group = group
         userList[user] = community
-        ttp.registerUser(user.name, user.publicKey, "user")
+        ttp.registerUser(user.name, user.publicKey, source = "test")
         return user
     }
 
@@ -308,7 +310,7 @@ class SystemTest {
         bank = Bank("Bank", group, communicationProtocol, null, depositedEuroManager, runSetup = false)
         bank.crs = crs
         addressBookManager.insertAddress(Address(ttp.name, Role.TTP, ttp.publicKey, "SomeTTPPubKey".toByteArray()))
-        ttp.registerUser(bank.name, bank.publicKey, "bank")
+        ttp.registerUser(bank.name, bank.publicKey, source="test")
     }
 
     private fun createAddressManager(group: BilinearGroup): AddressBookManager {
