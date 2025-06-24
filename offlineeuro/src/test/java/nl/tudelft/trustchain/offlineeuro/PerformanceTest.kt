@@ -71,6 +71,16 @@ class PerformanceTest {
             val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
             val ephemeralPrivateKey = group.getRandomZr()
             val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+            val ephemeralSignature = Schnorr.schnorrSignature(
+                privateKey,
+                ephemeralPublicKey.toBytes(),
+                group
+            )
+
+            walletEntry.digitalEuro.ephemeralKeySignatures.add(ephemeralSignature)
+
+
             val transactionDetails =
                 Transaction.createTransaction(
                     ephemeralPrivateKey,
