@@ -294,6 +294,11 @@ class SystemTest {
         val community = prepareCommunityMock()
         val communicationProtocol = IPV8CommunicationProtocol(addressBookManager, community)
 
+        `when`(community.sendVerificationRequest(any(), any(), any())).then {
+            val verificationRequestMessage = VerificationReplyMessage("YES")
+            community.messageList.add(verificationRequestMessage)
+        }
+
         Mockito.`when`(community.messageList).thenReturn(communicationProtocol.messageList)
         val user = User(userName, group, null, walletManager, communicationProtocol, runSetup = false)
         user.crs = crs
