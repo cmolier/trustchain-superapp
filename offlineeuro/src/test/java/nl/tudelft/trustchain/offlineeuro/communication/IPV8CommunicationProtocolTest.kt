@@ -40,6 +40,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import java.math.BigInteger
+import java.util.Calendar
 
 class IPV8CommunicationProtocolTest {
     private val context = null
@@ -325,16 +326,15 @@ class IPV8CommunicationProtocolTest {
         iPV8CommunicationProtocol.participant = user
 
         val sendingUser = "UserToVerify"
-        val hash = "123456789"
 
-        val result = iPV8CommunicationProtocol.requestVerification(sendingUser, hash, ttpAddress.name)
-        verify(community, times(1)).sendVerificationRequest(sendingUser, hash, ttpAddress.peerPublicKey!!)
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE)
+        val hashInput = "$user.googleKey$currentMinute"
+        val hashResult = hashInput.hashCode().toString()
+
+        val result = iPV8CommunicationProtocol.requestVerification(sendingUser, hashResult, ttpAddress.name)
+        verify(community, times(1)).sendVerificationRequest(sendingUser, hashResult, ttpAddress.peerPublicKey!!)
         Assert.assertEquals("The result should be successful", "YES", result)
-    }
-
-    @Test
-    fun handleVerificationRequestMessageSuccessfulVerificationTest() {
-
     }
 
 }

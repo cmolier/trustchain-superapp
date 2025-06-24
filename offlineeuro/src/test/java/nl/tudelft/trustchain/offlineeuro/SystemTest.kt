@@ -17,6 +17,7 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsReplyMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.CRS
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
@@ -77,7 +78,7 @@ class SystemTest {
             "double_spend_euro_message".toByteArray(),
             group
         )
-        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(),euroSchnorrSignature.toBytes(),doubleSpentEuroSchnorrSignature.toBytes(), any())).then {
+        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(),any(),any(), any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
 
@@ -107,6 +108,10 @@ class SystemTest {
         addMessageToList(user, bankAddressMessage)
         // TODO MAKE THIS UNNECESSARY
         bankCommunity.messageList.add(bankAddressMessage)
+
+        val ttpAddressMessage = AddressMessage(ttp.name, Role.TTP, ttp.publicKey.toBytes(), ttp.name.toByteArray())
+        addMessageToList(user, ttpAddressMessage)
+
         val digitalEuro = withdrawDigitalEuro(user, bank.name)
 
         // Validations on the wallet
@@ -122,6 +127,7 @@ class SystemTest {
 
         val user2 = createTestUser()
         addMessageToList(user2, bankAddressMessage)
+        addMessageToList(user2, ttpAddressMessage)
 
         val user2AddressMessage = AddressMessage(user2.name, Role.User, user2.publicKey.toBytes(), user2.name.toByteArray())
         addMessageToList(user, user2AddressMessage)
@@ -135,6 +141,7 @@ class SystemTest {
         // Prepare double spend
         val user3 = createTestUser()
         addMessageToList(user3, bankAddressMessage)
+        addMessageToList(user3, ttpAddressMessage)
 
         val user3AddressMessage = AddressMessage(user3.name, Role.User, user3.publicKey.toBytes(), user3.name.toByteArray())
         addMessageToList(user, user3AddressMessage)
@@ -153,6 +160,10 @@ class SystemTest {
         addMessageToList(user, bankAddressMessage)
         // TODO MAKE THIS UNNECESSARY
         bankCommunity.messageList.add(bankAddressMessage)
+
+        val ttpAddressMessage = AddressMessage(ttp.name, Role.TTP, ttp.publicKey.toBytes(), ttp.name.toByteArray())
+        addMessageToList(user, ttpAddressMessage)
+
         for (i in 0 until 50)
             withdrawDigitalEuro(user, bank.name)
     }

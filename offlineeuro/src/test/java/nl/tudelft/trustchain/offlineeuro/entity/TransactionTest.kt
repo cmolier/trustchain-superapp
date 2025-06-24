@@ -73,7 +73,7 @@ class TransactionTest {
                 randomizationElements,
                 group,
                 crs,
-                group.generateRandomElementOfG()
+                group.generateRandomElementOfG() // This should be changed to ephemeralSignature
             )
 
         Assert.assertTrue("The transaction should be valid", Transaction.validate(transactionDetails, bank.publicKey, group, crs).valid)
@@ -136,7 +136,7 @@ class TransactionTest {
         val invalidTDetails = walletEntryToTransactionDetails(invalidTWalletEntry)
         val invalidTResult = Transaction.validate(invalidTDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidTResult.valid)
-        Assert.assertEquals(TransactionResult.INVALID_TS_RELATION_BANK_SIGNATURE.description, invalidTResult.description)
+        Assert.assertEquals(TransactionResult.INVALID_EPHEMERAL_SIGNATURE.description, invalidTResult.description)
     }
 
     @Test
@@ -170,7 +170,7 @@ class TransactionTest {
         val invalidTDetails = walletEntryToTransactionDetails(invalidTWalletEntry)
         val invalidTResult = Transaction.validate(invalidTDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidTResult.valid)
-        Assert.assertEquals(TransactionResult.INVALID_TS_RELATION_BANK_SIGNATURE.description, invalidTResult.description)
+        Assert.assertEquals(TransactionResult.INVALID_EPHEMERAL_SIGNATURE.description, invalidTResult.description)
     }
 
     @Test
@@ -233,8 +233,9 @@ class TransactionTest {
                     randomizationElements,
                     group,
                     crs,
-                    group.generateRandomElementOfG()
+                    group.g.powZn(privateKey) // This should be changed to ephemeralSignature
                 )
+            println(Transaction.validate(transactionDetails, bank.publicKey, group, crs).description)
             Assert.assertTrue("The transaction should be valid", Transaction.validate(transactionDetails, bank.publicKey, group, crs).valid)
             entry = detailsToWalletEntry(transactionDetails, randomT)
         }
