@@ -61,21 +61,34 @@ class TransactionTest {
         withdrawDigitalEuro(user, bank.name)
         val walletEntry = user.wallet.getWalletEntryToSpend()!!
 
-        val privateKey = group.getRandomZr()
-        val publicKey = group.g.powZn(privateKey)
+        val ephemeralPrivateKey = group.getRandomZr()
+        val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+        val mockLongTermPrivateKey = group.getRandomZr()
+        val mockLongTermPublicKey = group.g.powZn(mockLongTermPrivateKey)
+
+        val ephemeralSignature = Schnorr.schnorrSignature(
+            mockLongTermPrivateKey,
+            ephemeralPublicKey.toBytes(),
+            group
+        )
+
+        walletEntry.digitalEuro.ephemeralKeySignatures.add(ephemeralSignature)
+
         val randomT = group.getRandomZr()
         val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
         val transactionDetails =
             Transaction.createTransaction(
-                privateKey,
-                publicKey,
+                ephemeralPrivateKey,
+                ephemeralPublicKey,
                 walletEntry,
                 randomizationElements,
                 group,
                 crs,
-                group.generateRandomElementOfG() // This should be changed to ephemeralSignature
+                mockLongTermPublicKey
             )
 
+        print(Transaction.validate(transactionDetails, bank.publicKey, group, crs).description)
         Assert.assertTrue("The transaction should be valid", Transaction.validate(transactionDetails, bank.publicKey, group, crs).valid)
     }
 
