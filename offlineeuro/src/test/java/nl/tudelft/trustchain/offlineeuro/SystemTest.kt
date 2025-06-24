@@ -110,6 +110,7 @@ class SystemTest {
         bankCommunity.messageList.add(bankAddressMessage)
 
         val ttpAddressMessage = AddressMessage(ttp.name, Role.TTP, ttp.publicKey.toBytes(), ttp.name.toByteArray())
+
         addMessageToList(user, ttpAddressMessage)
 
         val digitalEuro = withdrawDigitalEuro(user, bank.name)
@@ -270,9 +271,18 @@ class SystemTest {
             }
         }
 
+        val registeredUserManager = RegisteredUserManager(null, group, createDriver())
+        registeredUserManager.addRegisteredUser(
+            sender.name,
+            sender.publicKey
+        )
+
+        val user = registeredUserManager.getRegisteredUserByName(sender.name)
+
+
         val calendar = Calendar.getInstance()
         val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
-        val hashInput = "$sender.googleKey$currentMinute"
+        val hashInput = "${user?.googleKey}$currentMinute"
         val result = hashInput.hashCode().toString()
 
         val transactionResult =
