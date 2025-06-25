@@ -24,6 +24,37 @@ While 2FA ensures that only legitimate users can access and operate their wallet
 
 ## 2FA
 
+To enhance user authentication, we integrated a secure two-factor authentication (2FA) mechanism based on QR codes and a trusted third party (TTP). This ensures that only authorized users can operate their wallets by binding a secret key to the user's device during setup and requiring proof of knowledge of that key during each transaction. The implementation consists of two stages: **setup** and **verification**.
+
+### 2FA Setup
+
+![2FA Setup Flow](offlineeuro/images/2fa-setup.jpg)
+
+1. **Create user** – The user initiates account creation in the OfflineEuro app.
+2. **Send user info to TTP** – The app transmits basic user information to a trusted third party (TTP).
+3. **Open QR scanner** – The app prompts the user to open a scanner interface.
+4. **Generate secret at TTP** – The TTP creates a new user entry and associates it with a freshly generated secret key.
+5. **Display QR code** – The TTP encodes the secret key into a QR code and displays it.
+6. **Scan QR code** – The user scans the QR code and stores the secret key securely within the device. This secret never leaves the device.
+
+### 2FA Verification (Per Transaction)
+
+![2FA Transaction Flow](offlineeuro/images/2fa-transaction.jpg)
+
+1. **Hash construction** – Before initiating a transaction, the device constructs a one-time hash using the stored secret key and current timestamp.
+2. **Send hash to TTP** – The hash is sent as a verification request to the TTP.
+3. **Hash comparison** – The TTP independently computes the expected hash using its copy of the secret key and compares it with the one sent by the user.
+4. **Authorize or deny** – If the hashes match, the TTP responds with a "YES" signal; otherwise, it responds with a "NO".
+5. **Transaction execution** – If approved, the transaction proceeds as normal.
+
+This method adds a strong layer of authentication: even if an attacker compromises the interface or steals user credentials, they cannot perform transactions without access to the secret key securely stored on the device.
+
+### Assumptions
+
+- **Trusted TTP**: The system assumes that the trusted third party (TTP) behaves honestly and securely stores the user's secret keys.
+- **Secure QR Scanning**: The QR code scanning step during setup is assumed to be secure. Users must ensure that this interaction takes place in a safe environment (e.g., not while screen-sharing or being monitored), as the QR code contains sensitive information that could compromise their wallet if intercepted.
+- **Device Integrity**: It is also assumed that the user's device is uncompromised and capable of securely storing the secret key without leakage.
+
 ## Ephemeral Keys
 
 The old version of the OfflineEuro app generated a key pair for each user, which was then used to sign every transaction.
