@@ -223,7 +223,7 @@ object TableHelpers {
         secondaryButton.setOnClickListener {
             try {
                 val hash = generateHash()
-                val depositResult = user.sendDigitalEuroTo(bankName, hash)
+                val depositResult = user.sendDigitalEuroTo(bankName, hash, skipVerification = true)
 
                 Toast.makeText(context, depositResult, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
