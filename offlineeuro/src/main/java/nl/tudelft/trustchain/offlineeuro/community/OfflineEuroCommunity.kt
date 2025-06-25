@@ -574,7 +574,10 @@ class OfflineEuroCommunity(
                 MessageID.VERIFICATION_REPLY,
                 ByteArrayPayload(result.toByteArray())
             )
-        send(requestingPeer, packet)
+        Log.println(Log.ERROR, "TTP-VERIFICATION", "ttp sends back verification reply")
+        Log.println(Log.ERROR, "TTP-VERIFICATION", result)
+        send(requestingPeer.address, packet)
+        Log.println(Log.ERROR, "TTP-VERIFICATION", "message sent and delivered")
     }
 
     fun onVerificationReplyPacket(packet: Packet) {

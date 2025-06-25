@@ -1,7 +1,6 @@
 package nl.tudelft.trustchain.offlineeuro.entity
 
 import android.content.Context
-import android.util.Log
 import it.unisa.dia.gas.jpbc.Element
 import nl.tudelft.trustchain.offlineeuro.communication.ICommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
@@ -36,11 +35,13 @@ class User(
         wallet = Wallet(privateKey, publicKey, walletManager!!)
     }
 
-    fun sendDigitalEuroTo(nameReceiver: String, hash: String): String {
-        Log.println(Log.ERROR, "XD", "HASH SEND:$hash")
+    fun sendDigitalEuroTo(nameReceiver: String, hash: String, skipVerification: Boolean = false): String {
         val hashInput = if (name == "test") "testHash" else hash
-        val verificationResult = communicationProtocol.requestVerification(name, hashInput, nameTTP = "TTP")
-        Log.println(Log.ERROR, "VERIFICATION RESULT", verificationResult)
+        val verificationResult: String = if (skipVerification) {
+            "YES"
+        } else {
+            communicationProtocol.requestVerification(name, hashInput, nameTTP = "TTP")
+        }
         if (verificationResult == "YES") {
             onDataChangeCallback?.invoke("Transaction verification succeeded")
             val randomizationElements =

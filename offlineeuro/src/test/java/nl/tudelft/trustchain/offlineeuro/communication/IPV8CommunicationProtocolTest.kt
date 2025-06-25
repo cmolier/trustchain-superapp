@@ -16,6 +16,8 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsReplyMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationRequestMessage
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.CRSGenerator
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahai
@@ -23,6 +25,7 @@ import nl.tudelft.trustchain.offlineeuro.cryptography.PairingTypes
 import nl.tudelft.trustchain.offlineeuro.db.AddressBookManager
 import nl.tudelft.trustchain.offlineeuro.entity.Address
 import nl.tudelft.trustchain.offlineeuro.entity.Bank
+import nl.tudelft.trustchain.offlineeuro.entity.RegisteredUser
 import nl.tudelft.trustchain.offlineeuro.entity.TTP
 import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetails
 import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetailsBytes
@@ -37,6 +40,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import java.math.BigInteger
+import java.util.Calendar
 
 class IPV8CommunicationProtocolTest {
     private val context = null
@@ -77,15 +81,24 @@ class IPV8CommunicationProtocolTest {
     @Before
     fun setup() {
         `when`(community.messageList).thenReturn(iPV8CommunicationProtocol.messageList)
-        val ttpAddressMessage = AddressMessage(ttpAddress.name, ttpAddress.type, ttpAddress.publicKey.toBytes(), ttpAddress.peerPublicKey!!)
+        val ttpAddressMessage = AddressMessage(
+            ttpAddress.name,
+            ttpAddress.type,
+            ttpAddress.publicKey.toBytes(),
+            ttpAddress.peerPublicKey!!
+        )
         `when`(community.getGroupDescriptionAndCRS()).then {
-            val message = BilinearGroupCRSReplyMessage(groupDescription.toGroupElementBytes(), ttpCRS.first.toCRSBytes(), ttpAddressMessage)
+            val message = BilinearGroupCRSReplyMessage(
+                groupDescription.toGroupElementBytes(),
+                ttpCRS.first.toCRSBytes(),
+                ttpAddressMessage
+            )
             community.messageList.add(message)
         }
 
         `when`(community.sendGroupDescriptionAndCRS(any(), any(), any(), any())).then { }
 
-        `when`(community.registerAtTTP(any(), any(), any(), source="userhome")).then { }
+        `when`(community.registerAtTTP(any(), any(), any(), any())).then { }
 
         `when`(community.sendBlindSignatureRandomnessReply(any(), any())).then { }
         `when`(community.sendBlindSignature(any(), any())).then { }
@@ -101,12 +114,19 @@ class IPV8CommunicationProtocolTest {
         }
 
         `when`(community.getTransactionRandomizationElements(any(), any())).then {
-            val message = TransactionRandomizationElementsReplyMessage(randomizationElements.toRandomizationElementsBytes())
+            val message =
+                TransactionRandomizationElementsReplyMessage(randomizationElements.toRandomizationElementsBytes())
             community.messageList.add(message)
         }
 
         `when`(community.sendTransactionDetails(any(), any(), any())).then {
             val message = TransactionResultMessage(transactionResult)
+            community.messageList.add(message)
+        }
+
+        `when`(community.sendVerificationReply(any(), any())).then {}
+        `when`(community.sendVerificationRequest(any(), any(), any())).then {
+            val message = VerificationReplyMessage("YES")
             community.messageList.add(message)
         }
     }
@@ -297,4 +317,24 @@ class IPV8CommunicationProtocolTest {
         verify(user, times(1)).onReceivedTransaction(transactionDetails, bankPK, publicKeySender)
         verify(community, times(1)).sendTransactionResult(result, receivingPeer)
     }
+
+    @Test
+    fun requestVerificationSuccessfulTest() {
+        addressBookManager.insertAddress(ttpAddress)
+
+        val user = Mockito.mock(User::class.java)
+        iPV8CommunicationProtocol.participant = user
+
+        val sendingUser = "UserToVerify"
+
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE)
+        val hashInput = "$user.googleKey$currentMinute"
+        val hashResult = hashInput.hashCode().toString()
+
+        val result = iPV8CommunicationProtocol.requestVerification(sendingUser, hashResult, ttpAddress.name)
+        verify(community, times(1)).sendVerificationRequest(sendingUser, hashResult, ttpAddress.peerPublicKey!!)
+        Assert.assertEquals("The result should be successful", "YES", result)
+    }
+
 }

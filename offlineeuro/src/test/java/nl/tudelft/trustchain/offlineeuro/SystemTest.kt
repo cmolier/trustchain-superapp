@@ -17,6 +17,7 @@ import nl.tudelft.trustchain.offlineeuro.community.message.TransactionMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsReplyMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionRandomizationElementsRequestMessage
 import nl.tudelft.trustchain.offlineeuro.community.message.TransactionResultMessage
+import nl.tudelft.trustchain.offlineeuro.community.message.VerificationReplyMessage
 import nl.tudelft.trustchain.offlineeuro.cryptography.BilinearGroup
 import nl.tudelft.trustchain.offlineeuro.cryptography.CRS
 import nl.tudelft.trustchain.offlineeuro.cryptography.GrothSahaiProof
@@ -36,6 +37,7 @@ import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetailsBytes
 import nl.tudelft.trustchain.offlineeuro.entity.TransactionResult
 import nl.tudelft.trustchain.offlineeuro.entity.User
 import nl.tudelft.trustchain.offlineeuro.enums.Role
+import nl.tudelft.trustchain.offlineeuro.libraries.SchnorrSignatureSerializer
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -47,6 +49,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import java.math.BigInteger
+import java.util.Calendar
 
 class SystemTest {
     // Setup the TTP
@@ -66,12 +69,26 @@ class SystemTest {
         createBank()
         val firstProofCaptor = argumentCaptor<ByteArray>()
         val secondProofCaptor = argumentCaptor<ByteArray>()
-        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(), any())).then {
+        val euroSchnorrSignature = Schnorr.schnorrSignature(
+            group.getRandomZr(),
+            "test_euro_message".toByteArray(),
+            group
+        )
+        val doubleSpentEuroSchnorrSignature = Schnorr.schnorrSignature(
+            group.getRandomZr(),
+            "double_spend_euro_message".toByteArray(),
+            group
+        )
+
+        val euroSchnorrSignatureBytes = SchnorrSignatureSerializer.serializeSchnorrSignature(euroSchnorrSignature)
+        val doubleSpentEuroSchnorrSignatureBytes = SchnorrSignatureSerializer.serializeSchnorrSignature(doubleSpentEuroSchnorrSignature)
+
+        `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(),any(),any(), any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
 
             val peerMock = Mockito.mock(Peer::class.java)
-            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, peerMock)
+            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, euroSchnorrSignatureBytes, doubleSpentEuroSchnorrSignatureBytes ,peerMock)
 
             val fraudControlResultCaptor = argumentCaptor<String>()
             `when`(ttpCommunity.sendFraudControlReply(fraudControlResultCaptor.capture(), any())).then {
@@ -96,6 +113,11 @@ class SystemTest {
         addMessageToList(user, bankAddressMessage)
         // TODO MAKE THIS UNNECESSARY
         bankCommunity.messageList.add(bankAddressMessage)
+
+        val ttpAddressMessage = AddressMessage(ttp.name, Role.TTP, ttp.publicKey.toBytes(), ttp.name.toByteArray())
+
+        addMessageToList(user, ttpAddressMessage)
+
         val digitalEuro = withdrawDigitalEuro(user, bank.name)
 
         // Validations on the wallet
@@ -111,6 +133,7 @@ class SystemTest {
 
         val user2 = createTestUser()
         addMessageToList(user2, bankAddressMessage)
+        addMessageToList(user2, ttpAddressMessage)
 
         val user2AddressMessage = AddressMessage(user2.name, Role.User, user2.publicKey.toBytes(), user2.name.toByteArray())
         addMessageToList(user, user2AddressMessage)
@@ -124,6 +147,7 @@ class SystemTest {
         // Prepare double spend
         val user3 = createTestUser()
         addMessageToList(user3, bankAddressMessage)
+        addMessageToList(user3, ttpAddressMessage)
 
         val user3AddressMessage = AddressMessage(user3.name, Role.User, user3.publicKey.toBytes(), user3.name.toByteArray())
         addMessageToList(user, user3AddressMessage)
@@ -142,6 +166,10 @@ class SystemTest {
         addMessageToList(user, bankAddressMessage)
         // TODO MAKE THIS UNNECESSARY
         bankCommunity.messageList.add(bankAddressMessage)
+
+        val ttpAddressMessage = AddressMessage(ttp.name, Role.TTP, ttp.publicKey.toBytes(), ttp.name.toByteArray())
+        addMessageToList(user, ttpAddressMessage)
+
         for (i in 0 until 50)
             withdrawDigitalEuro(user, bank.name)
     }
@@ -248,11 +276,25 @@ class SystemTest {
             }
         }
 
+        val registeredUserManager = RegisteredUserManager(null, group, createDriver())
+        registeredUserManager.addRegisteredUser(
+            sender.name,
+            sender.publicKey
+        )
+
+        val user = registeredUserManager.getRegisteredUserByName(sender.name)
+
+
+        val calendar = Calendar.getInstance()
+        val currentMinute = calendar.get(Calendar.MINUTE) // Extracts the minute component
+        val hashInput = "${user?.googleKey}$currentMinute"
+        val result = hashInput.hashCode().toString()
+
         val transactionResult =
             if (doubleSpend) {
                 sender.doubleSpendDigitalEuroTo(receiver.name)
             } else {
-                sender.sendDigitalEuroTo(receiver.name)
+                sender.sendDigitalEuroTo(receiver.name, result)
             }
         Assert.assertEquals(expectedResult, transactionResult)
     }
@@ -267,12 +309,17 @@ class SystemTest {
         val community = prepareCommunityMock()
         val communicationProtocol = IPV8CommunicationProtocol(addressBookManager, community)
 
+        `when`(community.sendVerificationRequest(any(), any(), any())).then {
+            val verificationRequestMessage = VerificationReplyMessage("YES")
+            community.messageList.add(verificationRequestMessage)
+        }
+
         Mockito.`when`(community.messageList).thenReturn(communicationProtocol.messageList)
         val user = User(userName, group, null, walletManager, communicationProtocol, runSetup = false)
         user.crs = crs
         user.group = group
         userList[user] = community
-        ttp.registerUser(user.name, user.publicKey)
+        ttp.registerUser(user.name, user.publicKey, source = "test")
         return user
     }
 
@@ -300,7 +347,7 @@ class SystemTest {
         bank = Bank("Bank", group, communicationProtocol, null, depositedEuroManager, runSetup = false)
         bank.crs = crs
         addressBookManager.insertAddress(Address(ttp.name, Role.TTP, ttp.publicKey, "SomeTTPPubKey".toByteArray()))
-        ttp.registerUser(bank.name, bank.publicKey)
+        ttp.registerUser(bank.name, bank.publicKey, source="test")
     }
 
     private fun createAddressManager(group: BilinearGroup): AddressBookManager {

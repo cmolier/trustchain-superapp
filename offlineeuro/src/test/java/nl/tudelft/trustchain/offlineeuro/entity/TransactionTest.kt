@@ -61,20 +61,34 @@ class TransactionTest {
         withdrawDigitalEuro(user, bank.name)
         val walletEntry = user.wallet.getWalletEntryToSpend()!!
 
-        val privateKey = group.getRandomZr()
-        val publicKey = group.g.powZn(privateKey)
+        val ephemeralPrivateKey = group.getRandomZr()
+        val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+        val mockLongTermPrivateKey = group.getRandomZr()
+        val mockLongTermPublicKey = group.g.powZn(mockLongTermPrivateKey)
+
+        val ephemeralSignature = Schnorr.schnorrSignature(
+            mockLongTermPrivateKey,
+            ephemeralPublicKey.toBytes(),
+            group
+        )
+
+        walletEntry.digitalEuro.ephemeralKeySignatures.add(ephemeralSignature)
+
         val randomT = group.getRandomZr()
         val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
         val transactionDetails =
             Transaction.createTransaction(
-                privateKey,
-                publicKey,
+                ephemeralPrivateKey,
+                ephemeralPublicKey,
                 walletEntry,
                 randomizationElements,
                 group,
                 crs,
+                mockLongTermPublicKey
             )
 
+        print(Transaction.validate(transactionDetails, bank.publicKey, group, crs).description)
         Assert.assertTrue("The transaction should be valid", Transaction.validate(transactionDetails, bank.publicKey, group, crs).valid)
     }
 
@@ -114,16 +128,16 @@ class TransactionTest {
         // Try with an invalid signature
         val fakeSignature =
             SchnorrSignature(BigInteger("1230284023820194821"), firstEuro.signature.encryption, firstEuro.signature.signedMessage)
-        val invalidEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, fakeSignature, firstEuro.proofs)
-        val invalidWalletEntry = WalletEntry(invalidEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val invalidEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, fakeSignature, firstEuro.proofs, arrayListOf())
+        val invalidWalletEntry = WalletEntry(invalidEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val invalidSignatureDetails = walletEntryToTransactionDetails(invalidWalletEntry)
         val invalidSignatureResult = Transaction.validate(invalidSignatureDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidSignatureResult.valid)
         Assert.assertEquals(TransactionResult.INVALID_BANK_SIGNATURE.description, invalidSignatureResult.description)
 
         // Try with a different signature
-        val fakeEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, secondEuro.signature, firstEuro.proofs)
-        val fakeWalletEntry = WalletEntry(fakeEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val fakeEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, secondEuro.signature, firstEuro.proofs, arrayListOf())
+        val fakeWalletEntry = WalletEntry(fakeEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val transactionDetails = walletEntryToTransactionDetails(fakeWalletEntry)
         val verificationResult = Transaction.validate(transactionDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", verificationResult.valid)
@@ -131,7 +145,7 @@ class TransactionTest {
 
         // Try with a different T
         val invalidT = group.getRandomZr()
-        val invalidTWalletEntry = WalletEntry(walletEntry.digitalEuro, invalidT, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val invalidTWalletEntry = WalletEntry(walletEntry.digitalEuro, invalidT, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val invalidTDetails = walletEntryToTransactionDetails(invalidTWalletEntry)
         val invalidTResult = Transaction.validate(invalidTDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidTResult.valid)
@@ -148,16 +162,16 @@ class TransactionTest {
         // Try with an invalid signature
         val fakeSignature =
             SchnorrSignature(BigInteger("1230284023820194821"), firstEuro.signature.encryption, firstEuro.signature.signedMessage)
-        val invalidEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, fakeSignature, firstEuro.proofs)
-        val invalidWalletEntry = WalletEntry(invalidEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val invalidEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, fakeSignature, firstEuro.proofs, arrayListOf())
+        val invalidWalletEntry = WalletEntry(invalidEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val invalidSignatureDetails = walletEntryToTransactionDetails(invalidWalletEntry)
         val invalidSignatureResult = Transaction.validate(invalidSignatureDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidSignatureResult.valid)
         Assert.assertEquals(TransactionResult.INVALID_BANK_SIGNATURE.description, invalidSignatureResult.description)
 
         // Try with a different signature
-        val fakeEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, secondEuro.signature, firstEuro.proofs)
-        val fakeWalletEntry = WalletEntry(fakeEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val fakeEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, secondEuro.signature, firstEuro.proofs, arrayListOf())
+        val fakeWalletEntry = WalletEntry(fakeEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val transactionDetails = walletEntryToTransactionDetails(fakeWalletEntry)
         val verificationResult = Transaction.validate(transactionDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", verificationResult.valid)
@@ -165,7 +179,7 @@ class TransactionTest {
 
         // Try with a different T
         val invalidT = group.getRandomZr()
-        val invalidTWalletEntry = WalletEntry(walletEntry.digitalEuro, invalidT, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val invalidTWalletEntry = WalletEntry(walletEntry.digitalEuro, invalidT, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val invalidTDetails = walletEntryToTransactionDetails(invalidTWalletEntry)
         val invalidTResult = Transaction.validate(invalidTDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidTResult.valid)
@@ -182,16 +196,16 @@ class TransactionTest {
         // Try with an invalid signature
         val fakeSignature =
             SchnorrSignature(BigInteger("1230284023820194821"), firstEuro.signature.encryption, firstEuro.signature.signedMessage)
-        val invalidEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, fakeSignature, firstEuro.proofs)
-        val invalidWalletEntry = WalletEntry(invalidEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val invalidEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, fakeSignature, firstEuro.proofs, arrayListOf())
+        val invalidWalletEntry = WalletEntry(invalidEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val invalidSignatureDetails = walletEntryToTransactionDetails(invalidWalletEntry)
         val invalidSignatureResult = Transaction.validate(invalidSignatureDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidSignatureResult.valid)
         Assert.assertEquals(TransactionResult.INVALID_BANK_SIGNATURE.description, invalidSignatureResult.description)
 
         // Try with a different signature
-        val fakeEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, secondEuro.signature, firstEuro.proofs)
-        val fakeWalletEntry = WalletEntry(fakeEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent)
+        val fakeEuro = DigitalEuro(firstEuro.serialNumber, firstEuro.firstTheta1, secondEuro.signature, firstEuro.proofs, arrayListOf())
+        val fakeWalletEntry = WalletEntry(fakeEuro, walletEntry.t, walletEntry.transactionSignature, walletEntry.timesSpent, group.generateRandomElementOfG())
         val transactionDetails = walletEntryToTransactionDetails(fakeWalletEntry)
         val verificationResult = Transaction.validate(transactionDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", verificationResult.valid)
@@ -199,17 +213,31 @@ class TransactionTest {
     }
 
     private fun walletEntryToTransactionDetails(walletEntry: WalletEntry): TransactionDetails {
-        val privateKey = group.getRandomZr()
-        val publicKey = group.g.powZn(privateKey)
+        val ephemeralPrivateKey = group.getRandomZr()
+        val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+        val mockLongTermPrivateKey = group.getRandomZr()
+        val mockLongTermPublicKey = group.g.powZn(mockLongTermPrivateKey)
+
+        val ephemeralSignature = Schnorr.schnorrSignature(
+            mockLongTermPrivateKey,
+            ephemeralPublicKey.toBytes(),
+            group
+        )
+
+        walletEntry.digitalEuro.ephemeralKeySignatures.add(ephemeralSignature)
+
         val randomT = group.getRandomZr()
         val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
+
         return Transaction.createTransaction(
-            privateKey,
-            publicKey,
+            ephemeralPrivateKey,
+            ephemeralPublicKey,
             walletEntry,
             randomizationElements,
             group,
             crs,
+            mockLongTermPublicKey
         )
     }
 
@@ -219,19 +247,34 @@ class TransactionTest {
     ): WalletEntry {
         var entry = walletEntry
         for (i: Int in 0 until numberOfProofs) {
-            val privateKey = group.getRandomZr()
-            val publicKey = group.g.powZn(privateKey)
+
+            val ephemeralPrivateKey = group.getRandomZr()
+            val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+            val mockLongTermPrivateKey = group.getRandomZr()
+            val mockLongTermPublicKey = group.g.powZn(mockLongTermPrivateKey)
+
+            val ephemeralSignature = Schnorr.schnorrSignature(
+                mockLongTermPrivateKey,
+                ephemeralPublicKey.toBytes(),
+                group
+            )
+
+            walletEntry.digitalEuro.ephemeralKeySignatures.add(ephemeralSignature)
+
             val randomT = group.getRandomZr()
             val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
             val transactionDetails =
                 Transaction.createTransaction(
-                    privateKey,
-                    publicKey,
+                    ephemeralPrivateKey,
+                    ephemeralPublicKey,
                     entry,
                     randomizationElements,
                     group,
                     crs,
+                    mockLongTermPublicKey
                 )
+            println(Transaction.validate(transactionDetails, bank.publicKey, group, crs).description)
             Assert.assertTrue("The transaction should be valid", Transaction.validate(transactionDetails, bank.publicKey, group, crs).valid)
             entry = detailsToWalletEntry(transactionDetails, randomT)
         }
@@ -330,7 +373,7 @@ class TransactionTest {
         digitalEuro.proofs.add(transactionDetails.currentTransactionProof.grothSahaiProof)
 
         val transactionSignature = transactionDetails.theta1Signature
-        return WalletEntry(digitalEuro, t, transactionSignature)
+        return WalletEntry(digitalEuro, t, transactionSignature, 0, group.generateRandomElementOfG())
     }
 
     private fun createTTP() {
@@ -359,7 +402,7 @@ class TransactionTest {
         bank.generateKeyPair()
         bankCommunity = community
         communicationProtocol.participant = bank
-        ttp.registerUser(bank.name, bank.publicKey)
+        ttp.registerUser(bank.name, bank.publicKey, "source")
     }
 
     private fun createAddressManager(group: BilinearGroup): AddressBookManager {

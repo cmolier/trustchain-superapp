@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanIntentResult
 import com.journeyapps.barcodescanner.ScanOptions
+import nl.tudelft.trustchain.common.ui.QRCodeActivityPortrait
 import nl.tudelft.trustchain.offlineeuro.R
 import nl.tudelft.trustchain.offlineeuro.communication.IPV8CommunicationProtocol
 import nl.tudelft.trustchain.offlineeuro.community.OfflineEuroCommunity
@@ -95,6 +96,7 @@ class UserHomeFragment : OfflineEuroBaseFragment(R.layout.fragment_user_home) {
             setBeepEnabled(true)
             setBarcodeImageEnabled(true)
             setOrientationLocked(true)
+            captureActivity = QRCodeActivityPortrait::class.java
         }
         barcodeLauncher.launch(options)
     }
