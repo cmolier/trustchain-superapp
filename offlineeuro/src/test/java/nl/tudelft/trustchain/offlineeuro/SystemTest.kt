@@ -37,6 +37,7 @@ import nl.tudelft.trustchain.offlineeuro.entity.TransactionDetailsBytes
 import nl.tudelft.trustchain.offlineeuro.entity.TransactionResult
 import nl.tudelft.trustchain.offlineeuro.entity.User
 import nl.tudelft.trustchain.offlineeuro.enums.Role
+import nl.tudelft.trustchain.offlineeuro.libraries.SchnorrSignatureSerializer
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -78,12 +79,16 @@ class SystemTest {
             "double_spend_euro_message".toByteArray(),
             group
         )
+
+        val euroSchnorrSignatureBytes = SchnorrSignatureSerializer.serializeSchnorrSignature(euroSchnorrSignature)
+        val doubleSpentEuroSchnorrSignatureBytes = SchnorrSignatureSerializer.serializeSchnorrSignature(doubleSpentEuroSchnorrSignature)
+
         `when`(bankCommunity.sendFraudControlRequest(firstProofCaptor.capture(), secondProofCaptor.capture(),any(),any(), any())).then {
             val firstProofBytes = firstProofCaptor.lastValue
             val secondProofBytes = secondProofCaptor.lastValue
 
             val peerMock = Mockito.mock(Peer::class.java)
-            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes,euroSchnorrSignature.toBytes(), doubleSpentEuroSchnorrSignature.toBytes() ,peerMock)
+            val fraudControlRequestMessage = FraudControlRequestMessage(firstProofBytes, secondProofBytes, euroSchnorrSignatureBytes, doubleSpentEuroSchnorrSignatureBytes ,peerMock)
 
             val fraudControlResultCaptor = argumentCaptor<String>()
             `when`(ttpCommunity.sendFraudControlReply(fraudControlResultCaptor.capture(), any())).then {
