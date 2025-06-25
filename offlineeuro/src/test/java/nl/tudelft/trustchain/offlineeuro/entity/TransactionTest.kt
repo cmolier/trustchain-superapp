@@ -149,7 +149,7 @@ class TransactionTest {
         val invalidTDetails = walletEntryToTransactionDetails(invalidTWalletEntry)
         val invalidTResult = Transaction.validate(invalidTDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidTResult.valid)
-        Assert.assertEquals(TransactionResult.INVALID_EPHEMERAL_SIGNATURE.description, invalidTResult.description)
+        Assert.assertEquals(TransactionResult.INVALID_TS_RELATION_BANK_SIGNATURE.description, invalidTResult.description)
     }
 
     @Test
@@ -183,7 +183,7 @@ class TransactionTest {
         val invalidTDetails = walletEntryToTransactionDetails(invalidTWalletEntry)
         val invalidTResult = Transaction.validate(invalidTDetails, bank.publicKey, group, crs)
         Assert.assertFalse("The transaction should be invalid", invalidTResult.valid)
-        Assert.assertEquals(TransactionResult.INVALID_EPHEMERAL_SIGNATURE.description, invalidTResult.description)
+        Assert.assertEquals(TransactionResult.INVALID_TS_RELATION_BANK_SIGNATURE.description, invalidTResult.description)
     }
 
     @Test
@@ -213,18 +213,31 @@ class TransactionTest {
     }
 
     private fun walletEntryToTransactionDetails(walletEntry: WalletEntry): TransactionDetails {
-        val privateKey = group.getRandomZr()
-        val publicKey = group.g.powZn(privateKey)
+        val ephemeralPrivateKey = group.getRandomZr()
+        val ephemeralPublicKey = group.g.powZn(ephemeralPrivateKey)
+
+        val mockLongTermPrivateKey = group.getRandomZr()
+        val mockLongTermPublicKey = group.g.powZn(mockLongTermPrivateKey)
+
+        val ephemeralSignature = Schnorr.schnorrSignature(
+            mockLongTermPrivateKey,
+            ephemeralPublicKey.toBytes(),
+            group
+        )
+
+        walletEntry.digitalEuro.ephemeralKeySignatures.add(ephemeralSignature)
+
         val randomT = group.getRandomZr()
         val randomizationElements = GrothSahai.tToRandomizationElements(randomT, group, crs)
+
         return Transaction.createTransaction(
-            privateKey,
-            publicKey,
+            ephemeralPrivateKey,
+            ephemeralPublicKey,
             walletEntry,
             randomizationElements,
             group,
             crs,
-            group.generateRandomElementOfG()
+            mockLongTermPublicKey
         )
     }
 
