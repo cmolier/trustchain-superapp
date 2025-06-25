@@ -78,3 +78,9 @@ The added differences are indicated in green.
 
 This ephemeral key functionality is integrated inside of the inner workings of the application, without a change on the front-end.
 To use it the user just uses the application as normal, with the added benefit that their transactions being unlinkable and secure.
+
+
+## Testing
+We have implemented unit tests for the 2FA and ephemeral key functionalities to ensure their correctness and reliability.
+
+![Unit Tests](offlineeuro/images/testresult.png)
